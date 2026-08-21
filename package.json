@@ -1,0 +1,14 @@
+{
+  "name": "impact-rebated-fees",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Uniswap v4 hook that settles swap fees after the fact based on realised markout",
+  "scripts": {
+    "dev": "npm --prefix app run dev",
+    "build": "npm --prefix app run build",
+    "test": "forge test --root contracts",
+    "analyze": "python3 analysis/run.py",
+    "check": "npm run test && npm run build"
+  },
+  "license": "MIT"
+}
