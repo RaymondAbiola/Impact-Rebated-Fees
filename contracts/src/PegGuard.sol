@@ -18,11 +18,13 @@ import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 contract PegGuard is BaseHook, IPegGuard {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
+    using LPFeeLibrary for uint24;
 
     uint256 public nextReceiptId;
     mapping(uint256 receiptId => Receipt) public receipts;
 
     error InvalidHookData();
+    error NonDynamicFeePool();
 
     uint160 public constant HOOK_FLAGS =
         Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
@@ -48,12 +50,13 @@ contract PegGuard is BaseHook, IPegGuard {
         });
     }
 
-    function _beforeSwap(address, PoolKey calldata, SwapParams calldata, bytes calldata)
+    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata, bytes calldata)
         internal
         pure
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
+        if (!key.fee.isDynamicFee()) revert NonDynamicFeePool();
         return (
             IHooks.beforeSwap.selector,
             BeforeSwapDeltaLibrary.ZERO_DELTA,
