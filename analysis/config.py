@@ -23,6 +23,7 @@ BASE_FEE_BPS = 5
 ESCROW_FEE_BPS = 25
 K_BLOCKS = 20
 THETA_BPS = 10
+MIN_SWAP_USD = 100  # below this the amount ratio is noise, see fetch findings
 
 
 def rpc_url() -> str:
