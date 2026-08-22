@@ -11,8 +11,19 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {Params} from "./Params.sol";
+import {IPegGuard} from "./interfaces/IPegGuard.sol";
+import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 
-contract PegGuard is BaseHook {
+contract PegGuard is BaseHook, IPegGuard {
+    using PoolIdLibrary for PoolKey;
+    using BalanceDeltaLibrary for BalanceDelta;
+
+    uint256 public nextReceiptId;
+    mapping(uint256 receiptId => Receipt) public receipts;
+
+    error InvalidHookData();
+
     constructor(IPoolManager manager) BaseHook(manager) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
@@ -47,12 +58,38 @@ contract PegGuard is BaseHook {
         );
     }
 
-    function _afterSwap(address, PoolKey calldata, SwapParams calldata, BalanceDelta, bytes calldata)
+    function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData)
         internal
-        pure
         override
         returns (bytes4, int128)
     {
+        address beneficiary = sender;
+        if (hookData.length == 32) beneficiary = abi.decode(hookData, (address));
+        else if (hookData.length != 0) revert InvalidHookData();
+
+        uint256 receiptId = nextReceiptId++;
+        receipts[receiptId] = Receipt({
+            poolId: PoolId.unwrap(key.toId()),
+            beneficiary: beneficiary,
+            swapBlock: uint64(block.number),
+            amount0: _abs(delta.amount0()),
+            amount1: _abs(delta.amount1()),
+            zeroForOne: params.zeroForOne,
+            settled: false
+        });
+        emit ReceiptRecorded(
+            receiptId,
+            PoolId.unwrap(key.toId()),
+            beneficiary,
+            uint64(block.number),
+            _abs(delta.amount0()),
+            _abs(delta.amount1()),
+            params.zeroForOne
+        );
         return (IHooks.afterSwap.selector, 0);
+    }
+
+    function _abs(int128 value) private pure returns (uint128) {
+        return uint128(uint256(value < 0 ? -int256(value) : int256(value)));
     }
 }
