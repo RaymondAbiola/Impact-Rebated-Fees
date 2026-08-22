@@ -23,3 +23,10 @@ venv/
 # raw fixtures are large and reproducible via analysis/fetch.py
 analysis/fixtures/*.csv
 !analysis/fixtures/sample_*.csv
+
+# analysis scratch and bulky exports; keep the reviewed JSON gate artifacts
+analysis/out/*.csv
+analysis/out/*.jsonl
+analysis/out/*.html
+analysis/out/*.png
+analysis/out/*.tmp
