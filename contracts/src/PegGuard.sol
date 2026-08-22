@@ -14,7 +14,7 @@ import {Params} from "./Params.sol";
 import {IPegGuard} from "./interfaces/IPegGuard.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 
 contract PegGuard is BaseHook, IPegGuard {
     using PoolIdLibrary for PoolKey;
@@ -100,12 +100,14 @@ contract PegGuard is BaseHook, IPegGuard {
             swapBlock: swapBlock,
             amount0: amount0,
             amount1: amount1,
+            escrowCurrency: Currency.unwrap(feeCurrency),
+            escrowAmount: uint128(feeAmount),
             zeroForOne: params.zeroForOne,
             settled: false
         });
         uint256 receiptId = _recordReceipt(receipt);
         if (feeAmount != 0) {
-            poolManager.take(feeCurrency, address(this), feeAmount);
+            poolManager.mint(address(this), CurrencyLibrary.toId(feeCurrency), feeAmount);
             escrowed[Currency.unwrap(feeCurrency)] += feeAmount;
             emit HookFeeEscrowed(Currency.unwrap(feeCurrency), feeAmount, receiptId);
         }

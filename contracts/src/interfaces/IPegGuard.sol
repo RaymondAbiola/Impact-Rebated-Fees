@@ -8,6 +8,8 @@ interface IPegGuard {
         uint64 swapBlock;
         uint128 amount0;
         uint128 amount1;
+        address escrowCurrency;
+        uint128 escrowAmount;
         bool zeroForOne;
         bool settled;
     }
