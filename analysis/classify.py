@@ -81,6 +81,29 @@ def classify(exec_price: float, acquired_volatile: bool, price_after: float, the
     return markout_bps > theta_bps, markout_bps
 
 
+def prepare(rows, min_swap_usd=None):
+    """One pass over the fixture: price series plus the per-swap facts that
+    do not depend on K or theta."""
+    min_swap_usd = min_swap_usd if min_swap_usd is not None else config.MIN_SWAP_USD
+    lo, hi, prefix = build_price_series(rows)
+    trades, skipped = [], {"dust": 0, "degenerate": 0}
+    for r in rows:
+        a0, a1 = r["amount0"], r["amount1"]
+        if a0 == 0 or a1 == 0:
+            skipped["degenerate"] += 1
+            continue
+        usd = abs(a0) / DEC0
+        if usd < min_swap_usd:
+            skipped["dust"] += 1
+            continue
+        trades.append({
+            "block": r["block"], "tx": r["tx"], "usd": usd,
+            "exec_price": usd / (abs(a1) / DEC1),
+            "acquired_volatile": a0 > 0,
+        })
+    return (lo, hi, prefix), trades, skipped
+
+
 def run(rows, k=None, theta_bps=None, min_swap_usd=None):
     k = k if k is not None else config.K_BLOCKS
     theta_bps = theta_bps if theta_bps is not None else config.THETA_BPS
