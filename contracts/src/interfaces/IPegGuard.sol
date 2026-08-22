@@ -21,4 +21,6 @@ interface IPegGuard {
         uint128 amount1,
         bool zeroForOne
     );
+
+    event HookFeeEscrowed(address indexed currency, uint256 amount, uint256 indexed receiptId);
 }

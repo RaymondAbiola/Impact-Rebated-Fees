@@ -57,4 +57,9 @@ contract PegGuardFeeTest is Test {
             ""
         );
     }
+
+    function test_escrowFeeRateIsTwentyFiveBps() public pure {
+        assertEq(Params.ESCROW_FEE_BPS, 25);
+        assertEq(1_000_000 * Params.ESCROW_FEE_BPS / 10_000, 2_500);
+    }
 }
