@@ -24,6 +24,9 @@ contract PegGuard is BaseHook, IPegGuard {
 
     error InvalidHookData();
 
+    uint160 public constant HOOK_FLAGS =
+        Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+
     constructor(IPoolManager manager) BaseHook(manager) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
