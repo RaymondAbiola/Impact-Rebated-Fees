@@ -73,8 +73,8 @@ Placeholders until the sweep in `analysis/` locks them. Once chosen they live in
 |---|---|---|
 | `BASE_FEE` | 5 bps | Paid to LPs at swap time, never refundable |
 | `ESCROW_FEE` | 25 bps | Held, then refunded or donated |
-| `K` | 20 blocks | Settlement window |
-| `THETA` | 10 bps | Markout threshold for calling a trade informed |
+| `K` | 120 seconds | Settlement window; convert to chain blocks at deployment |
+| `THETA` | 10 bps | Post-swap drift threshold for calling a trade informed |
 | `MIN_SWAP` | TBD | Below this, skip escrow entirely and charge base fee only |
 | `MAX_REFUND` | `ESCROW_FEE` | Per-swap refund cap |
 | `EXPIRY` | 10x `K` | After this, unsettled escrow defaults to LPs |
@@ -95,6 +95,18 @@ The test suite has to hold these:
 - the hook never touches `BASE_FEE` once it has gone to LPs
 
 ## Known gaps
+
+## Analysis gate
+
+The first sweep compared execution-relative markout with a shuffled null and
+showed a negative lift. That comparison is mechanically biased: execution
+price includes the swap fee and own price impact, while the null does not. The
+gate therefore decomposes markout into execution drag and post-swap drift, and
+compares drift with the null. On the captured 26,209-swap fixture, the locked
+120-second/10-bps cell has 13.79% real right-tail observations versus 12.00% in
+the null (+1.79 percentage points). The complete distributions are in
+`analysis/out/gate.json`; this is evidence of a weak but positive direction
+signal, not a claim of exact informed-trader labeling.
 
 - **Beneficiary.** Swaps arrive through routers, so `msg.sender` is not the
   trader. The intended recipient is passed through `hookData`, with a fallback

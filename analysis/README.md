@@ -34,3 +34,11 @@ Each row is one Swap event from the v3 USDC/WETH 0.05% pool:
 Deliberately not used: sender address. Classifying by who is trading would be a
 reputation system, which is a different project and one that has been built
 already. The whole point is that the price path alone tells you.
+
+## Gate output
+
+Run `PYTHONPATH=analysis python3 analysis/gate.py` after a fixture exists. The
+result in `out/gate.json` records markout, post-swap drift, shuffled-null
+histograms, and lift for every tested window and threshold. The gate compares
+drift: execution price already includes fee and own price impact, so comparing
+execution-relative markout to a null creates a mechanical negative offset.

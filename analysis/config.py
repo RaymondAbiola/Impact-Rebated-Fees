@@ -17,11 +17,13 @@ SWAP_TOPIC = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
 # the same as weighting by time
 BLOCK_SECONDS = 12
 
-# placeholders, the sweep in sweep.py replaces these. keep in step with
-# docs/SPEC.md and contracts/src/Params.sol
+# Locked by the drift-vs-null gate in analysis/out/gate.json. K_BLOCKS is only
+# the equivalent for this 12-second mainnet fixture; deployments convert the
+# time window to their own block time.
 BASE_FEE_BPS = 5
 ESCROW_FEE_BPS = 25
-K_BLOCKS = 20
+K_SECONDS = 120
+K_BLOCKS = round(K_SECONDS / BLOCK_SECONDS)
 THETA_BPS = 10
 MIN_SWAP_USD = 100  # below this the amount ratio is noise, see fetch findings
 
