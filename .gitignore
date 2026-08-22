@@ -19,3 +19,7 @@ venv/
 .DS_Store
 *.log
 !analysis/out/
+
+# raw fixtures are large and reproducible via analysis/fetch.py
+analysis/fixtures/*.csv
+!analysis/fixtures/sample_*.csv
