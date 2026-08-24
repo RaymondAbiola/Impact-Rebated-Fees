@@ -125,12 +125,17 @@ contract InvariantTest is Test {
         );
     }
 
-    /// Guards against a vacuous run. Runs at the end of a sequence rather than
-    /// as an invariant, because invariants are also checked straight after
-    /// setUp when nothing has happened yet.
-    function afterInvariant() public view {
-        assertGt(hook.nextReceiptId(), 0, "no swaps landed");
-        assertGt(handler.settledCount(), 0, "nothing ever settled");
+    /// Guards against the invariants passing over a dead pool. Deterministic
+    /// rather than an afterInvariant hook, because the fuzzer is free to
+    /// produce a short sequence where every call reverts and that is not a bug.
+    function test_handlerActuallySwapsAndSettles() public {
+        handler.swap(0, 1 ether);
+        handler.swap(1, 1 ether);
+        assertGt(hook.nextReceiptId(), 0, "handler cannot swap");
+
+        handler.advance(uint32(Params.SETTLEMENT_WINDOW_SECONDS + 1));
+        handler.settleOne(0);
+        assertGt(handler.settledCount(), 0, "handler cannot settle");
     }
 
     /// A settled receipt stays settled and never pays out twice.
