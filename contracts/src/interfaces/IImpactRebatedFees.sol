@@ -34,4 +34,13 @@ interface IImpactRebatedFees {
     );
 
     event HookFeeEscrowed(address indexed currency, uint256 amount, uint256 indexed receiptId);
+
+    event ReceiptSettled(
+        uint256 indexed receiptId,
+        address indexed beneficiary,
+        bool informed,
+        int256 driftTicks,
+        address currency,
+        uint256 amount
+    );
 }

@@ -16,8 +16,9 @@ import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
+import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockCallback.sol";
 
-contract ImpactRebatedFees is BaseHook, IImpactRebatedFees {
+contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
     using LPFeeLibrary for uint24;
@@ -31,6 +32,8 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees {
 
     error InvalidHookData();
     error NonDynamicFeePool();
+    error AlreadySettled();
+    error WindowNotElapsed();
 
     function previewEscrowFee(uint256 unspecifiedAmount) external pure returns (uint256) {
         return unspecifiedAmount * Params.ESCROW_FEE_BPS / 10_000;
@@ -160,6 +163,60 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees {
         );
     }
 
+
+    /// Drift since the swap, in ticks. One tick is 1.0001x, so a tick is within
+    /// a rounding error of a basis point at the sizes we threshold on.
+    function driftOf(uint256 receiptId) public view returns (int256 drift, bool ready) {
+        Receipt memory r = receipts[receiptId];
+        uint256 elapsed = block.timestamp - r.swapTimestamp;
+        ready = elapsed >= Params.SETTLEMENT_WINDOW_SECONDS;
+        if (elapsed == 0) return (0, ready);
+
+        int256 mean = (int256(currentTickCumulative(PoolId.wrap(r.poolId))) - int256(r.tickCumulative))
+            / int256(elapsed);
+        // acquiring token1 pays off when token1 gets scarcer per token0, ie tick falls
+        drift = r.zeroForOne ? int256(r.tickPost) - mean : mean - int256(r.tickPost);
+    }
+
+    function settle(uint256 receiptId) public {
+        Receipt storage r = receipts[receiptId];
+        if (r.settled) revert AlreadySettled();
+
+        (int256 drift, bool ready) = driftOf(receiptId);
+        if (!ready) revert WindowNotElapsed();
+
+        bool informed = drift > int256(uint256(Params.THETA_BPS));
+        uint256 amount = r.escrowAmount;
+        address currency = r.escrowCurrency;
+        address beneficiary = r.beneficiary;
+
+        r.settled = true;
+        if (amount != 0) {
+            escrowed[currency] -= amount;
+            poolManager.unlock(abi.encode(receiptId, informed, currency, amount, beneficiary));
+        }
+
+        emit ReceiptSettled(receiptId, beneficiary, informed, drift, currency, amount);
+    }
+
+    function unlockCallback(bytes calldata data) external override returns (bytes memory) {
+        if (msg.sender != address(poolManager)) revert NotPoolManager();
+        (uint256 receiptId, bool informed, address currency, uint256 amount, address beneficiary) =
+            abi.decode(data, (uint256, bool, address, uint256, address));
+
+        Currency c = Currency.wrap(currency);
+        // burning the claim turns the escrow back into a credit we can spend
+        poolManager.burn(address(this), CurrencyLibrary.toId(c), amount);
+
+        if (informed) {
+            PoolKey memory key = poolKeys[PoolId.wrap(receipts[receiptId].poolId)];
+            bool isZero = Currency.unwrap(key.currency0) == currency;
+            poolManager.donate(key, isZero ? amount : 0, isZero ? 0 : amount, "");
+        } else {
+            poolManager.take(c, beneficiary, amount);
+        }
+        return "";
+    }
 
     function _unspecifiedAmount(PoolKey calldata key, SwapParams calldata params, BalanceDelta delta)
         private
