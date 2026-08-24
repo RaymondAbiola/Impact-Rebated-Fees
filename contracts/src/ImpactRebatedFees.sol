@@ -11,19 +11,23 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {Params} from "./Params.sol";
-import {IPegGuard} from "./interfaces/IPegGuard.sol";
+import {IImpactRebatedFees} from "./interfaces/IImpactRebatedFees.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
+import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
 
-contract PegGuard is BaseHook, IPegGuard {
+contract ImpactRebatedFees is BaseHook, IImpactRebatedFees {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
     using LPFeeLibrary for uint24;
+    using StateLibrary for IPoolManager;
 
     uint256 public nextReceiptId;
     mapping(uint256 receiptId => Receipt) public receipts;
     mapping(address currency => uint256 amount) public escrowed;
+    mapping(PoolId poolId => Observation) public observations;
+    mapping(PoolId poolId => PoolKey) public poolKeys;
 
     error InvalidHookData();
     error NonDynamicFeePool();
@@ -89,23 +93,28 @@ contract PegGuard is BaseHook, IPegGuard {
 
         (Currency feeCurrency, uint128 swapAmount) = _unspecifiedAmount(key, params, delta);
         feeAmount = uint256(swapAmount) * Params.ESCROW_FEE_BPS / 10_000;
-        uint128 amount0 = _abs(delta.amount0());
-        uint128 amount1 = _abs(delta.amount1());
-        bytes32 poolId = PoolId.unwrap(key.toId());
-        uint64 swapBlock = uint64(block.number);
 
-        Receipt memory receipt = Receipt({
-            poolId: poolId,
-            beneficiary: beneficiary,
-            swapBlock: swapBlock,
-            amount0: amount0,
-            amount1: amount1,
-            escrowCurrency: Currency.unwrap(feeCurrency),
-            escrowAmount: uint128(feeAmount),
-            zeroForOne: params.zeroForOne,
-            settled: false
-        });
-        uint256 receiptId = _recordReceipt(receipt);
+        PoolId id = key.toId();
+        if (poolKeys[id].tickSpacing == 0) poolKeys[id] = key;
+        (, int24 tickPost,,) = poolManager.getSlot0(id);
+        int56 cumulative = _observe(id, tickPost);
+
+        uint256 receiptId = _recordReceipt(
+            Receipt({
+                poolId: PoolId.unwrap(id),
+                beneficiary: beneficiary,
+                swapTimestamp: uint64(block.timestamp),
+                zeroForOne: params.zeroForOne,
+                settled: false,
+                tickPost: tickPost,
+                tickCumulative: cumulative,
+                escrowAmount: uint128(feeAmount),
+                escrowCurrency: Currency.unwrap(feeCurrency)
+            }),
+            _abs(delta.amount0()),
+            _abs(delta.amount1())
+        );
+
         if (feeAmount != 0) {
             poolManager.mint(address(this), CurrencyLibrary.toId(feeCurrency), feeAmount);
             escrowed[Currency.unwrap(feeCurrency)] += feeAmount;
@@ -113,19 +122,44 @@ contract PegGuard is BaseHook, IPegGuard {
         }
     }
 
-    function _recordReceipt(Receipt memory receipt) private returns (uint256 receiptId) {
+    /// Advance the pool's cumulative tick to now, then record the new tick.
+    /// Same shape as the v3 oracle: cumulative carries the *previous* tick over
+    /// the time it was live, so a single block cannot move the average.
+    function _observe(PoolId id, int24 tickPost) private returns (int56 cumulative) {
+        Observation memory obs = observations[id];
+        cumulative = obs.tickCumulative;
+        if (obs.timestamp != 0) {
+            cumulative += int56(obs.lastTick) * int56(uint56(block.timestamp - obs.timestamp));
+        }
+        observations[id] =
+            Observation({timestamp: uint64(block.timestamp), lastTick: tickPost, tickCumulative: cumulative});
+    }
+
+    /// Cumulative tick brought forward to the current timestamp.
+    function currentTickCumulative(PoolId id) public view returns (int56) {
+        Observation memory obs = observations[id];
+        if (obs.timestamp == 0) return 0;
+        return obs.tickCumulative + int56(obs.lastTick) * int56(uint56(block.timestamp - obs.timestamp));
+    }
+
+    function _recordReceipt(Receipt memory receipt, uint128 amount0, uint128 amount1)
+        private
+        returns (uint256 receiptId)
+    {
         receiptId = nextReceiptId++;
         receipts[receiptId] = receipt;
         emit ReceiptRecorded(
             receiptId,
             receipt.poolId,
             receipt.beneficiary,
-            receipt.swapBlock,
-            receipt.amount0,
-            receipt.amount1,
+            receipt.swapTimestamp,
+            receipt.tickPost,
+            amount0,
+            amount1,
             receipt.zeroForOne
         );
     }
+
 
     function _unspecifiedAmount(PoolKey calldata key, SwapParams calldata params, BalanceDelta delta)
         private

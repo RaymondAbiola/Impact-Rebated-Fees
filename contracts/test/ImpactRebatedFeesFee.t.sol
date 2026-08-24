@@ -10,21 +10,21 @@ import {BeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PegGuard} from "../src/PegGuard.sol";
+import {ImpactRebatedFees} from "../src/ImpactRebatedFees.sol";
 import {HookMiner} from "../src/HookMiner.sol";
 import {Params} from "../src/Params.sol";
 
-contract PegGuardFeeTest is Test {
-    function _deploy() internal returns (PegGuard hook) {
+contract ImpactRebatedFeesFeeTest is Test {
+    function _deploy() internal returns (ImpactRebatedFees hook) {
         uint160 flags = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
         (address expected, bytes32 salt) = HookMiner.find(
-            address(this), flags, type(PegGuard).creationCode, abi.encode(IPoolManager(address(this)))
+            address(this), flags, type(ImpactRebatedFees).creationCode, abi.encode(IPoolManager(address(this)))
         );
-        hook = new PegGuard{salt: salt}(IPoolManager(address(this)));
+        hook = new ImpactRebatedFees{salt: salt}(IPoolManager(address(this)));
         assertEq(address(hook), expected);
     }
 
-    function _key(PegGuard hook, uint24 fee) internal pure returns (PoolKey memory) {
+    function _key(ImpactRebatedFees hook, uint24 fee) internal pure returns (PoolKey memory) {
         return PoolKey({
             currency0: Currency.wrap(address(1)),
             currency1: Currency.wrap(address(2)),
@@ -35,7 +35,7 @@ contract PegGuardFeeTest is Test {
     }
 
     function test_beforeSwapOverridesBaseFeeOnDynamicPool() public {
-        PegGuard hook = _deploy();
+        ImpactRebatedFees hook = _deploy();
         (bytes4 selector, BeforeSwapDelta delta, uint24 fee) = hook.beforeSwap(
             address(this),
             _key(hook, LPFeeLibrary.DYNAMIC_FEE_FLAG),
@@ -48,8 +48,8 @@ contract PegGuardFeeTest is Test {
     }
 
     function test_beforeSwapRejectsStaticPool() public {
-        PegGuard hook = _deploy();
-        vm.expectRevert(PegGuard.NonDynamicFeePool.selector);
+        ImpactRebatedFees hook = _deploy();
+        vm.expectRevert(ImpactRebatedFees.NonDynamicFeePool.selector);
         hook.beforeSwap(
             address(this),
             _key(hook, 500),
