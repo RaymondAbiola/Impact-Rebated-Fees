@@ -17,14 +17,16 @@ SWAP_TOPIC = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67
 # the same as weighting by time
 BLOCK_SECONDS = 12
 
-# Locked by the drift-vs-null gate in analysis/out/gate.json. K_BLOCKS is only
+# Locked by analysis/economics.py, not by hit rate. 60s/20bps is the cell that
+# maximises LP revenue while an uninformed trader still expects to pay under
+# 1 bp on top of the base fee. K_BLOCKS is only
 # the equivalent for this 12-second mainnet fixture; deployments convert the
 # time window to their own block time.
 BASE_FEE_BPS = 5
 ESCROW_FEE_BPS = 25
-K_SECONDS = 120
+K_SECONDS = 60
 K_BLOCKS = round(K_SECONDS / BLOCK_SECONDS)
-THETA_BPS = 10
+THETA_BPS = 20
 MIN_SWAP_USD = 100  # below this the amount ratio is noise, see fetch findings
 
 

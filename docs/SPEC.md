@@ -66,23 +66,49 @@ than it saves.
 
 ## Parameters
 
-Placeholders until the sweep in `analysis/` locks them. Once chosen they live in
-`contracts/src/Params.sol` and are mirrored into the analysis config.
+Locked by `analysis/economics.py`. These live in
+`contracts/src/Params.sol` and are mirrored in `analysis/config.py`.
 
-| Name | Placeholder | Meaning |
+| Name | Value | Meaning |
 |---|---|---|
-| `BASE_FEE` | 5 bps | Paid to LPs at swap time, never refundable |
+| `BASE_FEE` | match the pool's existing tier | Paid to LPs at swap time, never refundable |
 | `ESCROW_FEE` | 25 bps | Held, then refunded or donated |
-| `K` | 120 seconds | Settlement window; convert to chain blocks at deployment |
-| `THETA` | 10 bps | Post-swap drift threshold for calling a trade informed |
-| `MIN_SWAP` | TBD | Below this, skip escrow entirely and charge base fee only |
-| `MAX_REFUND` | `ESCROW_FEE` | Per-swap refund cap |
+| `K` | 60 seconds | Settlement window; convert to chain blocks at deployment |
+| `THETA` | 20 bps | Post-swap drift threshold for calling a trade informed |
+| `MIN_SWAP` | per currency, owner set | Below this, no escrow and no receipt |
 | `EXPIRY` | 10x `K` | After this, unsettled escrow defaults to LPs |
-| `BOUNTY` | TBD | Share of escrow paid to whoever calls `settle` |
+| `BOUNTY` | 200 bps of escrow | Paid to whoever calls settle |
 
-`K` and `THETA` are the two real dials. `K` too short and noise dominates; too
-long and capital sits idle and the signal blurs. `THETA` trades false positives
-against false negatives directly.
+`BASE_FEE` is not a free parameter. Set it to whatever the pool already charges
+and the escrow becomes a pure surcharge on informed flow: no ordinary trader
+pays more than they do today, and the LP gain comes entirely from arbitrage.
+Setting it below the current tier means cutting the fee on the ~97% of volume
+that is benign, which loses LPs money at constant volume no matter how good the
+classifier is.
+
+`MAX_REFUND` from earlier drafts is gone. The refund is always exactly what was
+escrowed for that swap, so it is capped by construction and a separate
+parameter would be dead code.
+
+`K` and `THETA` were chosen by `analysis/economics.py`, on economics rather
+than hit rate. The number that decides it is what a trade carrying no
+information expects to pay on top of the base fee: it still trips the threshold
+at the null rate, and pays the escrow when it does.
+
+| Window | Theta | Flags | Uninformed pays | LP revenue |
+|---|---|---|---|---|
+| 120s | 10 bps | 13.8% | +2.95 bps | +94% |
+| **60s** | **20 bps** | **3.2%** | **+0.71 bps** | **+32.7%** |
+| 60s | 40 bps | 1.0% | +0.26 bps | +18.7% |
+
+120s/10bps looks better on revenue and is not defensible: on a 5 bps base fee it
+makes an ordinary trader 59% worse off, which is the opposite of what the hook
+claims to do. 60s/20bps keeps that cost under a basis point while still moving a
+third of base-fee revenue to LPs.
+
+The escrow recovers about 43% of what informed flow captured at this setting.
+Charging the full 58 bps that would recover 100% also doubles what benign
+traders pay, so the gap is deliberate.
 
 ## Invariants
 
