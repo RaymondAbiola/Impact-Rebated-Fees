@@ -170,7 +170,7 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     /// Advance the pool's cumulative tick to now, then record the new tick.
     /// Same shape as the v3 oracle: cumulative carries the *previous* tick over
     /// the time it was live, so a single block cannot move the average.
-    function _observe(PoolId id, int24 tickPost) private returns (int56 cumulative) {
+    function _observe(PoolId id, int24 tickPost) internal returns (int56 cumulative) {
         Observation memory obs = observations[id];
         cumulative = obs.tickCumulative;
         if (obs.timestamp != 0) {
