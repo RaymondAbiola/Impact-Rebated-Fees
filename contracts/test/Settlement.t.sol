@@ -183,4 +183,53 @@ contract SettlementTest is Test {
         assertEq(hook.nextReceiptId(), 0, "no receipt while paused");
         assertEq(hook.escrowed(address(token1)), 0);
     }
+
+    function testFuzz_escrowIsAlwaysTwentyFiveBpsOfGross(uint96 amount, bool zeroForOne) public {
+        int256 amt = -int256(uint256(bound(amount, 0.001 ether, 5 ether)));
+        BalanceDelta delta = _swap(zeroForOne, amt);
+
+        (,,,,,,, uint128 escrowAmount, address escrowCurrency) = hook.receipts(0);
+        // exact input: the unspecified side is the output the trader received
+        int128 netOut = zeroForOne ? delta.amount1() : delta.amount0();
+        assertGt(netOut, 0, "trader received output");
+        assertEq(
+            escrowCurrency,
+            zeroForOne ? address(token1) : address(token0),
+            "escrow sits in the output token"
+        );
+
+        // the router's delta is already net of the hook fee, so gross it back up
+        uint256 gross = uint256(uint128(netOut)) + escrowAmount;
+        assertApproxEqAbs(escrowAmount, gross * Params.ESCROW_FEE_BPS / 10_000, 1, "escrow rate");
+    }
+
+    function testFuzz_settleOnlyAfterTheWindow(uint32 elapsed) public {
+        _swap(true, -1 ether);
+        uint256 wait = bound(elapsed, 1, Params.SETTLEMENT_WINDOW_SECONDS * 4);
+        vm.warp(block.timestamp + wait);
+
+        if (wait < Params.SETTLEMENT_WINDOW_SECONDS) {
+            vm.expectRevert(ImpactRebatedFees.WindowNotElapsed.selector);
+            hook.settle(0);
+        } else {
+            hook.settle(0);
+            (,,,, bool settled,,,,) = hook.receipts(0);
+            assertTrue(settled);
+        }
+    }
+
+    function test_gasOverheadOfTheHook() public {
+        _swap(true, -1 ether);
+        uint256 g = gasleft();
+        _swap(true, -1 ether);
+        uint256 swapGas = g - gasleft();
+
+        vm.warp(block.timestamp + Params.SETTLEMENT_WINDOW_SECONDS + 1);
+        g = gasleft();
+        hook.settle(0);
+        uint256 settleGas = g - gasleft();
+
+        emit log_named_uint("swap with hook (gas)", swapGas);
+        emit log_named_uint("settle (gas)", settleGas);
+    }
 }
