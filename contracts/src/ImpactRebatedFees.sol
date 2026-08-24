@@ -179,42 +179,80 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     }
 
     function settle(uint256 receiptId) public {
+        _settle(receiptId, true);
+    }
+
+    /// Skips anything not ready instead of reverting, so one bad id cannot
+    /// take down the whole batch.
+    function settleBatch(uint256[] calldata receiptIds) external {
+        for (uint256 i; i < receiptIds.length; ++i) {
+            _settle(receiptIds[i], false);
+        }
+    }
+
+    function _settle(uint256 receiptId, bool strict) private {
         Receipt storage r = receipts[receiptId];
-        if (r.settled) revert AlreadySettled();
+        if (r.settled) {
+            if (strict) revert AlreadySettled();
+            return;
+        }
 
-        (int256 drift, bool ready) = driftOf(receiptId);
-        if (!ready) revert WindowNotElapsed();
+        uint256 elapsed = block.timestamp - r.swapTimestamp;
+        if (elapsed < Params.SETTLEMENT_WINDOW_SECONDS) {
+            if (strict) revert WindowNotElapsed();
+            return;
+        }
 
-        bool informed = drift > int256(uint256(Params.THETA_BPS));
+        (int256 drift,) = driftOf(receiptId);
+        bool expired = elapsed >= Params.EXPIRY_SECONDS;
+        bool informed = expired || drift > int256(uint256(Params.THETA_BPS));
+
         uint256 amount = r.escrowAmount;
         address currency = r.escrowCurrency;
         address beneficiary = r.beneficiary;
 
         r.settled = true;
+
+        uint256 bounty;
+        uint256 payout;
         if (amount != 0) {
+            bounty = amount * Params.BOUNTY_BPS / 10_000;
+            payout = amount - bounty;
             escrowed[currency] -= amount;
-            poolManager.unlock(abi.encode(receiptId, informed, currency, amount, beneficiary));
+            poolManager.unlock(
+                abi.encode(receiptId, informed, currency, payout, bounty, beneficiary, msg.sender)
+            );
         }
 
-        emit ReceiptSettled(receiptId, beneficiary, informed, drift, currency, amount);
+        emit ReceiptSettled(receiptId, beneficiary, informed, drift, currency, payout, bounty, expired);
     }
 
     function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
-        (uint256 receiptId, bool informed, address currency, uint256 amount, address beneficiary) =
-            abi.decode(data, (uint256, bool, address, uint256, address));
+        (
+            uint256 receiptId,
+            bool informed,
+            address currency,
+            uint256 payout,
+            uint256 bounty,
+            address beneficiary,
+            address keeper
+        ) = abi.decode(data, (uint256, bool, address, uint256, uint256, address, address));
 
         Currency c = Currency.wrap(currency);
         // burning the claim turns the escrow back into a credit we can spend
-        poolManager.burn(address(this), CurrencyLibrary.toId(c), amount);
+        poolManager.burn(address(this), CurrencyLibrary.toId(c), payout + bounty);
 
-        if (informed) {
-            PoolKey memory key = poolKeys[PoolId.wrap(receipts[receiptId].poolId)];
-            bool isZero = Currency.unwrap(key.currency0) == currency;
-            poolManager.donate(key, isZero ? amount : 0, isZero ? 0 : amount, "");
-        } else {
-            poolManager.take(c, beneficiary, amount);
+        if (payout != 0) {
+            if (informed) {
+                PoolKey memory key = poolKeys[PoolId.wrap(receipts[receiptId].poolId)];
+                bool isZero = Currency.unwrap(key.currency0) == currency;
+                poolManager.donate(key, isZero ? payout : 0, isZero ? 0 : payout, "");
+            } else {
+                poolManager.take(c, beneficiary, payout);
+            }
         }
+        if (bounty != 0) poolManager.take(c, keeper, bounty);
         return "";
     }
 

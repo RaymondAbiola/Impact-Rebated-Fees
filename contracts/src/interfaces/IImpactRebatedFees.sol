@@ -41,6 +41,8 @@ interface IImpactRebatedFees {
         bool informed,
         int256 driftTicks,
         address currency,
-        uint256 amount
+        uint256 payout,
+        uint256 bounty,
+        bool expired
     );
 }
