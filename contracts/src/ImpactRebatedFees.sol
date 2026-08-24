@@ -30,10 +30,19 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     mapping(PoolId poolId => Observation) public observations;
     mapping(PoolId poolId => PoolKey) public poolKeys;
 
+    address public owner;
+    bool public paused;
+    bool private entered;
+    /// per currency because the escrow lands in whichever token was unspecified,
+    /// and 1e6 of USDC is nothing like 1e6 of WETH
+    mapping(address currency => uint128 minimum) public minEscrow;
+
     error InvalidHookData();
     error NonDynamicFeePool();
     error AlreadySettled();
     error WindowNotElapsed();
+    error Unauthorized();
+    error Reentrant();
 
     function previewEscrowFee(uint256 unspecifiedAmount) external pure returns (uint256) {
         return unspecifiedAmount * Params.ESCROW_FEE_BPS / 10_000;
@@ -42,7 +51,36 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     uint160 public constant HOOK_FLAGS =
         Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
 
-    constructor(IPoolManager manager) BaseHook(manager) {}
+    constructor(IPoolManager manager) BaseHook(manager) {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
+    modifier nonReentrant() {
+        if (entered) revert Reentrant();
+        entered = true;
+        _;
+        entered = false;
+    }
+
+    function setOwner(address next) external onlyOwner {
+        owner = next;
+    }
+
+    /// Pausing stops new escrow but leaves the pool tradeable, and existing
+    /// receipts still settle. Bricking swaps would be a worse failure than
+    /// collecting no fee.
+    function setPaused(bool value) external onlyOwner {
+        paused = value;
+    }
+
+    function setMinEscrow(address currency, uint128 minimum) external onlyOwner {
+        minEscrow[currency] = minimum;
+    }
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -96,6 +134,10 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
 
         (Currency feeCurrency, uint128 swapAmount) = _unspecifiedAmount(key, params, delta);
         feeAmount = uint256(swapAmount) * Params.ESCROW_FEE_BPS / 10_000;
+
+        // a receipt that holds less than it costs to settle is worse than no
+        // receipt at all
+        if (paused || feeAmount < minEscrow[Currency.unwrap(feeCurrency)]) return 0;
 
         PoolId id = key.toId();
         if (poolKeys[id].tickSpacing == 0) poolKeys[id] = key;
@@ -178,13 +220,13 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
         drift = r.zeroForOne ? int256(r.tickPost) - mean : mean - int256(r.tickPost);
     }
 
-    function settle(uint256 receiptId) public {
+    function settle(uint256 receiptId) public nonReentrant {
         _settle(receiptId, true);
     }
 
     /// Skips anything not ready instead of reverting, so one bad id cannot
     /// take down the whole batch.
-    function settleBatch(uint256[] calldata receiptIds) external {
+    function settleBatch(uint256[] calldata receiptIds) external nonReentrant {
         for (uint256 i; i < receiptIds.length; ++i) {
             _settle(receiptIds[i], false);
         }
