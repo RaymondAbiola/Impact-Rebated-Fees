@@ -7,9 +7,10 @@
     "dev": "npm --prefix app run dev",
     "build": "npm --prefix app run build",
     "test": "forge test --root contracts",
-    "analyze": "python3 analysis/run.py",
-    "check": "npm run test && npm run build",
-    "fetch": "python3 analysis/fetch.py"
+    "analyze": "python3 analysis/economics.py",
+    "check": "npm run test && npm run build && npm run lint",
+    "fetch": "python3 analysis/fetch.py",
+    "lint": "npm --prefix app run lint"
   },
   "license": "MIT"
 }

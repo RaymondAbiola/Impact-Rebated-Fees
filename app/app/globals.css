@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Palette sampled from the Xapo reference: warm charcoal, one burnt orange,
+   earthy green. Nothing is pure black or pure white, and nothing is blue. */
+@theme {
+  --color-ground: #131110;
+  --color-bg: #1a1815;
+  --color-surface: #221f1b;
+  --color-elevated: #2d2a25;
+  --color-line: #3a362f;
+  --color-line-soft: #2a2721;
+
+  --color-ink: #f2eee7;
+  --color-ink-dim: #a39c90;
+  --color-ink-faint: #6e675c;
+
+  --color-accent: #cf5c2a;
+  --color-accent-hi: #e06b36;
+  --color-accent-soft: #3a2118;
+
+  /* verdicts: refunds read calm, payouts to LPs get the accent */
+  --color-benign: #6b9e5e;
+  --color-benign-soft: #1e2a1c;
+  --color-informed: #cf5c2a;
+  --color-informed-soft: #3a2118;
+  --color-pending: #6e675c;
+
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* every number in the app is monospace and slightly tracked out, which is the
+   detail that makes the reference read as financial rather than as a dashboard */
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.rule {
+  border-color: var(--color-line-soft);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ground);
+}
