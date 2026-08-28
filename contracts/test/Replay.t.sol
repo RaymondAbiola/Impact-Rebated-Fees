@@ -11,7 +11,7 @@ import {Params} from "../src/Params.sol";
 
 /// Lets the test drive the accumulator directly with a recorded tick series.
 contract ReplayHarness is ImpactRebatedFees {
-    constructor(IPoolManager m) ImpactRebatedFees(m) {}
+    constructor(IPoolManager m, address o) ImpactRebatedFees(m, o) {}
 
     function observe(PoolId id, int24 tick) external returns (int56) {
         return _observe(id, tick);
@@ -49,7 +49,7 @@ contract ReplayTest is Test {
 
     function setUp() public {
         PoolManager manager = new PoolManager(address(this));
-        deployCodeTo("Replay.t.sol:ReplayHarness", abi.encode(IPoolManager(address(manager))), HOOK_ADDR);
+        deployCodeTo("Replay.t.sol:ReplayHarness", abi.encode(IPoolManager(address(manager)), address(this)), HOOK_ADDR);
         hook = ReplayHarness(HOOK_ADDR);
 
         string memory json = vm.readFile("../analysis/out/replay.json");

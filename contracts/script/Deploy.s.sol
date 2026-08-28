@@ -23,18 +23,28 @@ contract Deploy is Script {
     // makes the mined hook address reproducible from a fresh clone
     address constant CREATE2_DEPLOYER = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
 
+    // kept in storage rather than on the stack, the script tips over otherwise
+    address hookAddr;
+    address managerAddr;
+    address swapRouterAddr;
+    address liqRouterAddr;
+    PoolKey key;
+
     function run() external {
-        address managerAddr = vm.envAddress("POOL_MANAGER");
+        managerAddr = vm.envAddress("POOL_MANAGER");
         IPoolManager manager = IPoolManager(managerAddr);
 
         uint160 flags = Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
-        (address expected, bytes32 salt) =
-            HookMiner.find(CREATE2_DEPLOYER, flags, type(ImpactRebatedFees).creationCode, abi.encode(manager));
+        address admin = msg.sender;
+        (address expected, bytes32 salt) = HookMiner.find(
+            CREATE2_DEPLOYER, flags, type(ImpactRebatedFees).creationCode, abi.encode(manager, admin)
+        );
 
         vm.startBroadcast();
 
-        ImpactRebatedFees hook = new ImpactRebatedFees{salt: salt}(manager);
+        ImpactRebatedFees hook = new ImpactRebatedFees{salt: salt}(manager, admin);
         require(address(hook) == expected, "mined address mismatch");
+        hookAddr = address(hook);
 
         // demo pair so the testnet deployment is tradeable without hunting for
         // faucet tokens
@@ -42,7 +52,7 @@ contract Deploy is Script {
         MockERC20 b = new MockERC20("Impact ETH", "iETH", 18);
         (MockERC20 t0, MockERC20 t1) = address(a) < address(b) ? (a, b) : (b, a);
 
-        PoolKey memory key = PoolKey({
+        key = PoolKey({
             currency0: Currency.wrap(address(t0)),
             currency1: Currency.wrap(address(t1)),
             fee: 500,
@@ -53,6 +63,8 @@ contract Deploy is Script {
 
         PoolModifyLiquidityTest liqRouter = new PoolModifyLiquidityTest(manager);
         PoolSwapTest swapRouter = new PoolSwapTest(manager);
+        liqRouterAddr = address(liqRouter);
+        swapRouterAddr = address(swapRouter);
 
         t0.mint(msg.sender, 1_000_000 ether);
         t1.mint(msg.sender, 1_000_000 ether);
@@ -67,23 +79,23 @@ contract Deploy is Script {
 
         vm.stopBroadcast();
 
-        _write(key, address(hook), managerAddr, address(swapRouter), address(liqRouter));
-        console.log("hook      ", address(hook));
-        console.log("swapRouter", address(swapRouter));
+        _write();
+        console.log("hook      ", hookAddr);
+        console.log("owner     ", admin);
+        console.log("swapRouter", swapRouterAddr);
         console.log("poolId    ", vm.toString(PoolId.unwrap(key.toId())));
     }
 
-    function _write(PoolKey memory key, address hook, address manager, address swapRouter, address liqRouter)
-        private
-    {
+    function _write() private {
         string memory o = "deployment";
         vm.serializeUint(o, "chainId", block.chainid);
-        vm.serializeAddress(o, "poolManager", manager);
-        vm.serializeAddress(o, "hook", hook);
-        vm.serializeAddress(o, "swapRouter", swapRouter);
-        vm.serializeAddress(o, "modifyLiquidityRouter", liqRouter);
+        vm.serializeAddress(o, "poolManager", managerAddr);
+        vm.serializeAddress(o, "hook", hookAddr);
+        vm.serializeAddress(o, "swapRouter", swapRouterAddr);
+        vm.serializeAddress(o, "modifyLiquidityRouter", liqRouterAddr);
         vm.serializeAddress(o, "currency0", Currency.unwrap(key.currency0));
         vm.serializeAddress(o, "currency1", Currency.unwrap(key.currency1));
+        vm.serializeUint(o, "fee", uint256(key.fee));
         vm.serializeUint(o, "tickSpacing", uint256(uint24(key.tickSpacing)));
         string memory out = vm.serializeBytes32(o, "poolId", PoolId.unwrap(key.toId()));
         vm.writeJson(out, string.concat("./deployments/", vm.toString(block.chainid), ".json"));

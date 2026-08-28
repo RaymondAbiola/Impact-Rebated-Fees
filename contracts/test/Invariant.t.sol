@@ -75,7 +75,7 @@ contract InvariantTest is Test {
         MockERC20 b = new MockERC20("B", "B", 18);
         (token0, token1) = address(a) < address(b) ? (a, b) : (b, a);
 
-        deployCodeTo("ImpactRebatedFees.sol:ImpactRebatedFees", abi.encode(IPoolManager(address(manager))), HOOK_ADDR);
+        deployCodeTo("ImpactRebatedFees.sol:ImpactRebatedFees", abi.encode(IPoolManager(address(manager)), address(this)), HOOK_ADDR);
         hook = ImpactRebatedFees(HOOK_ADDR);
 
         PoolSwapTest swapRouter = new PoolSwapTest(manager);

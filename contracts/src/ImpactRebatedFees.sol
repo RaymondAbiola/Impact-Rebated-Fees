@@ -47,8 +47,11 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     uint160 public constant HOOK_FLAGS =
         Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
 
-    constructor(IPoolManager manager) BaseHook(manager) {
-        owner = msg.sender;
+    // owner is explicit rather than msg.sender: the hook is deployed through
+    // the CREATE2 factory so that its address encodes the permission bits, and
+    // msg.sender in here is that factory, not a key anyone holds
+    constructor(IPoolManager manager, address initialOwner) BaseHook(manager) {
+        owner = initialOwner;
     }
 
     modifier onlyOwner() {

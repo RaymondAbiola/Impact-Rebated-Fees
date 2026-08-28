@@ -16,12 +16,12 @@ contract HookMinerTest is Test {
             address(this),
             FLAGS,
             type(ImpactRebatedFees).creationCode,
-            abi.encode(IPoolManager(address(0)))
+            abi.encode(IPoolManager(address(0)), address(this))
         );
 
         assertEq(uint160(hook) & Hooks.ALL_HOOK_MASK, FLAGS);
         assertEq(HookMiner.computeAddress(address(this), salt, abi.encodePacked(
-            type(ImpactRebatedFees).creationCode, abi.encode(IPoolManager(address(0)))
+            type(ImpactRebatedFees).creationCode, abi.encode(IPoolManager(address(0)), address(this))
         )), hook);
     }
 }

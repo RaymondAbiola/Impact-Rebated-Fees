@@ -1,0 +1,12 @@
+{
+  "chainId": 1301,
+  "currency0": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
+  "currency1": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
+  "fee": 500,
+  "hook": "0x7dEC15A39D42c9B5d41E0c351c0C9aDcbC8AC044",
+  "modifyLiquidityRouter": "0xDC37130a3f2D07EAacf6d8d66352932c79474b8a",
+  "poolId": "0x455a876e00e907027eb9e133134c826c500f7efce9c425c6f3fb49e241455dae",
+  "poolManager": "0x00B036B58a818B1BC34d502D3fE730Db729e62AC",
+  "swapRouter": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
+  "tickSpacing": 60
+}
