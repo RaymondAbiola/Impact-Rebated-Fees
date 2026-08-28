@@ -4,11 +4,22 @@ import { SETTLEMENT_WINDOW_SECONDS, type ReceiptView } from "@/lib/hooks";
 import { addresses } from "@/lib/generated";
 import { fmtUnits, short } from "@/lib/format";
 import { Chip } from "./ui";
+import { useSettle } from "@/lib/useSettle";
 
 const tokenOf = (c: string) =>
   c.toLowerCase() === addresses.currency0.toLowerCase() ? "iUSD" : "iETH";
 
-export function QueueRow({ r, now }: { r: ReceiptView; now: number }) {
+export function QueueRow({
+  r,
+  now,
+  settleOne,
+  busy,
+}: {
+  r: ReceiptView;
+  now: number;
+  settleOne: ReturnType<typeof useSettle>["settleOne"];
+  busy: ReturnType<typeof useSettle>["busy"];
+}) {
   // now is 0 until the first block lands; treat that as still waiting
   const elapsed = now === 0 ? 0 : now - r.swapTimestamp;
   const remaining = Math.max(0, SETTLEMENT_WINDOW_SECONDS - elapsed);
@@ -53,9 +64,19 @@ export function QueueRow({ r, now }: { r: ReceiptView; now: number }) {
         ) : (
           <Chip tone="benign">Benign</Chip>
         )}
-        <p className="numeric mt-2 text-[0.68rem] text-ink-faint">
-          {r.settled ? "settled" : "ready"}
-        </p>
+        {r.settled ? (
+          <p className="numeric mt-2 text-[0.68rem] text-ink-faint">
+            {r.settlement?.expired ? "expired" : "settled"}
+          </p>
+        ) : (
+          <button
+            disabled={waiting || busy !== null}
+            onClick={() => settleOne(r.id)}
+            className="numeric mt-2 rounded-full border border-line px-3 py-1 text-[0.68rem] text-ink-dim transition-colors hover:text-ink disabled:opacity-40"
+          >
+            {busy === r.id ? "settling" : "settle"}
+          </button>
+        )}
       </div>
     </div>
   );

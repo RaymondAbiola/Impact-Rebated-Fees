@@ -2,6 +2,7 @@
 
 import { useReadContract, useReadContracts } from "wagmi";
 import { hook, toReceipt, verdictOf, type Verdict } from "./contracts";
+import { useSettlements, type Settlement } from "./useSettlements";
 
 export function useReceiptCount() {
   return useReadContract({ ...hook, functionName: "nextReceiptId" });
@@ -18,10 +19,13 @@ export type ReceiptView = {
   drift: bigint;
   ready: boolean;
   verdict: Verdict;
+  /** present once the receipt has actually been paid out */
+  settlement?: Settlement;
 };
 
 /** Reads the newest `limit` receipts along with their live drift. */
 export function useReceipts(count: bigint | undefined, limit = 25) {
+  const { data: settlements } = useSettlements();
   const n = Number(count ?? 0n);
   const ids = Array.from({ length: Math.min(n, limit) }, (_, i) => n - 1 - i).filter((i) => i >= 0);
 
@@ -42,6 +46,7 @@ export function useReceipts(count: bigint | undefined, limit = 25) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rec = toReceipt(r.result as any);
       const [drift, ready] = d.result as readonly [bigint, boolean];
+      const settlement = settlements?.get(id);
       receipts.push({
         id,
         beneficiary: rec.beneficiary,
@@ -52,7 +57,14 @@ export function useReceipts(count: bigint | undefined, limit = 25) {
         escrowCurrency: rec.escrowCurrency,
         drift,
         ready,
-        verdict: verdictOf(rec.settled, ready, drift, THETA_BPS),
+        // a settled receipt's verdict lives in its event, not in a fresh
+        // driftOf call, which keeps moving after the payout
+        verdict: settlement
+          ? settlement.informed
+            ? "informed"
+            : "benign"
+          : verdictOf(rec.settled, ready, drift, THETA_BPS),
+        settlement,
       });
     });
   }

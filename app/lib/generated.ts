@@ -20,6 +20,9 @@ export const poolKey = {
 
 export const poolId = "0x455a876e00e907027eb9e133134c826c500f7efce9c425c6f3fb49e241455dae" as const;
 
+export const deployedAtBlock = 61092516n;
+export const maxLogSpan = 10_000n;
+
 export const hookAbi = [
   {
     "type": "constructor",
