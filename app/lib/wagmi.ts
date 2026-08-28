@@ -7,6 +7,9 @@ export const config = createConfig({
   connectors: [injected()],
   ssr: true,
   storage: createStorage({ storage: cookieStorage }),
+  // one block a second on unichain, so poll at that cadence and the
+  // settlement countdowns move without any client-side clock
+  pollingInterval: 1_000,
   transports: {
     [unichainSepolia.id]: http("https://sepolia.unichain.org"),
   },
