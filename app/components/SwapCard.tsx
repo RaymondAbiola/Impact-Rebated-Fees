@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { EXPLORER, useSwap } from "@/lib/useSwap";
 import { addresses, erc20Abi, poolKey } from "@/lib/generated";
 import { QUOTER, quoterAbi } from "@/lib/quoter";
 import { ESCROW_FEE_BPS, SETTLEMENT_WINDOW_SECONDS } from "@/lib/hooks";
-import { fmtUnits, parseUnits } from "@/lib/format";
+import { fmtUnits, parseUnits, short } from "@/lib/format";
 import { Label, Well } from "./ui";
 
 const POOL_FEE_BPS = poolKey.fee / 100;
@@ -21,6 +22,7 @@ export function SwapCard() {
   const symOut = zeroForOne ? "iETH" : "iUSD";
 
   const parsed = parseUnits(amount);
+  const { swap, mint, stage, hash, error } = useSwap();
 
   const { data: balances } = useReadContracts({
     query: { enabled: Boolean(address), refetchInterval: 8_000 },
@@ -101,12 +103,44 @@ export function SwapCard() {
         yourself and you keep the keeper bounty too, so it costs you nothing.
       </p>
 
-      <button
-        disabled
-        className="mt-5 w-full rounded-2xl bg-elevated py-3 text-sm text-ink-faint"
-      >
-        {isConnected ? "Execution lands in the next commit" : "Connect a wallet"}
-      </button>
+      <div className="mt-5 space-y-2">
+        <button
+          disabled={!isConnected || parsed <= 0n || stage === "approving" || stage === "swapping"}
+          onClick={() => swap(zeroForOne, parsed)}
+          className="w-full rounded-2xl bg-accent py-3 text-sm text-ground transition-colors hover:bg-accent-hi disabled:bg-elevated disabled:text-ink-faint"
+        >
+          {!isConnected
+            ? "Connect a wallet"
+            : stage === "approving"
+              ? "Approving"
+              : stage === "swapping"
+                ? "Swapping"
+                : `Swap ${symIn} for ${symOut}`}
+        </button>
+
+        <button
+          disabled={!isConnected || stage === "approving" || stage === "swapping"}
+          onClick={() => mint()}
+          className="numeric w-full rounded-2xl border border-line py-2 text-xs text-ink-dim transition-colors hover:text-ink disabled:opacity-50"
+        >
+          mint 1000 of each test token
+        </button>
+      </div>
+
+      {hash && (
+        <p className="numeric mt-3 text-xs text-ink-faint">
+          {stage === "done" ? "settled into the queue · " : "pending · "}
+          <a
+            className="text-accent hover:underline"
+            href={`${EXPLORER}/tx/${hash}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {short(hash)}
+          </a>
+        </p>
+      )}
+      {error && <p className="mt-3 text-xs text-informed">{error}</p>}
     </div>
   );
 }
