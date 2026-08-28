@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const instrument = Instrument_Sans({
   variable: "--font-instrument",
@@ -24,7 +25,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${instrument.variable} ${plexMono.variable}`}>
-      <body className="min-h-dvh bg-bg text-ink font-sans antialiased">{children}</body>
+      <body className="min-h-dvh bg-bg text-ink font-sans antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

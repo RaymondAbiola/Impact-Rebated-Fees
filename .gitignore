@@ -30,3 +30,4 @@ analysis/out/*.jsonl
 analysis/out/*.html
 analysis/out/*.png
 analysis/out/*.tmp
+*.tsbuildinfo
