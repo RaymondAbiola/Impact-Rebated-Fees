@@ -1,29 +1,33 @@
 @import "tailwindcss";
 
-/* Palette sampled from the Xapo reference: warm charcoal, one burnt orange,
-   earthy green. Nothing is pure black or pure white, and nothing is blue. */
+/* Sampled from the reference: cool charcoal chrome with a faint cyan cast,
+   soft-UI surfaces, and three saturated accents. The reference ships the same
+   interface in coral, mint and amber, which maps straight onto our three
+   receipt states. */
 @theme {
-  --color-ground: #131110;
-  --color-bg: #1a1815;
-  --color-surface: #221f1b;
-  --color-elevated: #2d2a25;
-  --color-line: #3a362f;
-  --color-line-soft: #2a2721;
+  --color-ground: #0f1414;
+  --color-bg: #161b1b;
+  --color-surface: #1c2222;
+  --color-elevated: #242b2c;
+  --color-line: #2e3637;
+  --color-line-soft: #222a2a;
 
-  --color-ink: #f2eee7;
-  --color-ink-dim: #a39c90;
-  --color-ink-faint: #6e675c;
+  --color-ink: #e8edec;
+  --color-ink-dim: #8e9998;
+  --color-ink-faint: #5c6666;
 
-  --color-accent: #cf5c2a;
-  --color-accent-hi: #e06b36;
-  --color-accent-soft: #3a2118;
+  /* informed: the pool caught you, escrow goes to the LPs */
+  --color-informed: #f05b4a;
+  --color-informed-soft: #2a1a18;
+  /* benign: nothing to answer for, escrow comes back */
+  --color-benign: #3fe39b;
+  --color-benign-soft: #142622;
+  /* still inside the settlement window */
+  --color-pending: #f1b85b;
+  --color-pending-soft: #2a2318;
 
-  /* verdicts: refunds read calm, payouts to LPs get the accent */
-  --color-benign: #6b9e5e;
-  --color-benign-soft: #1e2a1c;
-  --color-informed: #cf5c2a;
-  --color-informed-soft: #3a2118;
-  --color-pending: #6e675c;
+  --color-accent: #f05b4a;
+  --color-accent-hi: #ff6f5d;
 
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
@@ -39,16 +43,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* every number in the app is monospace and slightly tracked out, which is the
-   detail that makes the reference read as financial rather than as a dashboard */
+/* every number is monospace and tracked out, which is what makes the reference
+   read as an instrument rather than a dashboard */
 .numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
 
-.rule {
-  border-color: var(--color-line-soft);
+/* soft-UI: lifted off the background by shadow rather than by a border */
+.raised {
+  background: var(--color-surface);
+  box-shadow:
+    6px 6px 16px rgb(0 0 0 / 0.45),
+    -1px -1px 1px rgb(255 255 255 / 0.03);
+}
+
+.inset {
+  background: var(--color-ground);
+  box-shadow:
+    inset 4px 4px 10px rgb(0 0 0 / 0.5),
+    inset -1px -1px 2px rgb(255 255 255 / 0.02);
 }
 
 ::selection {
