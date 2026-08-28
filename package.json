@@ -10,7 +10,10 @@
     "analyze": "python3 analysis/economics.py",
     "check": "npm run test && npm run build && npm run lint",
     "fetch": "python3 analysis/fetch.py",
-    "lint": "npm --prefix app run lint"
+    "lint": "npm --prefix app run lint",
+    "seed": "forge script script/Seed.s.sol --sig \"demo()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
+    "settle": "forge script script/Seed.s.sol --sig \"settle()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
+    "snapshot": "npm --prefix app run snapshot"
   },
   "license": "MIT"
 }

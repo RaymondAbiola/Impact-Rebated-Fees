@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync": "node scripts/sync-abi.mjs",
-    "prebuild": "node scripts/sync-abi.mjs"
+    "prebuild": "node scripts/sync-abi.mjs",
+    "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",

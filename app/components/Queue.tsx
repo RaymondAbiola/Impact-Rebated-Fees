@@ -1,7 +1,7 @@
 "use client";
 
 import { useChainTime } from "@/lib/useChainTime";
-import { useReceiptCount, useReceipts } from "@/lib/hooks";
+import { snapshotCapturedAt, snapshotReceipts, useReceiptCount, useReceipts } from "@/lib/hooks";
 import { Label } from "./ui";
 import { QueueRow } from "./QueueRow";
 import { Totals } from "./Totals";
@@ -9,8 +9,12 @@ import { useSettle } from "@/lib/useSettle";
 
 export function Queue() {
   const now = useChainTime();
-  const { data: count } = useReceiptCount();
-  const { receipts, isLoading } = useReceipts(count as bigint | undefined);
+  const { data: count, isError: countFailed } = useReceiptCount();
+  const { receipts: live, isLoading } = useReceipts(count as bigint | undefined);
+
+  // if the chain is unreachable, show the recorded queue rather than nothing
+  const offline = countFailed || (!isLoading && count === undefined);
+  const receipts = offline ? snapshotReceipts() : live;
   const { settleOne, settleMany, busy, error } = useSettle();
 
   const ready = receipts.filter((r) => !r.settled && r.ready).map((r) => r.id);
@@ -54,6 +58,12 @@ export function Queue() {
       )}
       </div>
 
+      {offline && (
+        <p className="numeric text-xs text-pending">
+          chain unreachable · showing a snapshot recorded at{" "}
+          {new Date(snapshotCapturedAt * 1000).toISOString().slice(0, 16).replace("T", " ")}
+        </p>
+      )}
       {error && <p className="text-xs text-informed">{error}</p>}
     </div>
   );

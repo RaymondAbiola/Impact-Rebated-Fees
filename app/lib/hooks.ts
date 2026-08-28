@@ -3,6 +3,7 @@
 import { useReadContract, useReadContracts } from "wagmi";
 import { hook, toReceipt, verdictOf, type Verdict } from "./contracts";
 import { useSettlements, type Settlement } from "./useSettlements";
+import snapshot from "@/data/snapshot.json";
 
 export function useReceiptCount() {
   return useReadContract({ ...hook, functionName: "nextReceiptId" });
@@ -76,3 +77,48 @@ export const THETA_BPS = 20n;
 export const SETTLEMENT_WINDOW_SECONDS = 60;
 export const ESCROW_FEE_BPS = 25n;
 export const BOUNTY_BPS = 200n;
+
+/**
+ * Last resort for the demo: if the chain reads fail, render the recorded
+ * snapshot instead of an empty screen. Flagged so the ui can say so rather than
+ * quietly passing stale state off as live.
+ */
+export function snapshotReceipts(): ReceiptView[] {
+  const settlements = new Map(
+    snapshot.settlements.map((s) => [
+      s.id,
+      {
+        id: s.id,
+        informed: s.informed,
+        drift: BigInt(s.drift),
+        currency: s.currency as `0x${string}`,
+        payout: BigInt(s.payout),
+        bounty: BigInt(s.bounty),
+        expired: s.expired,
+      } satisfies Settlement,
+    ]),
+  );
+
+  return snapshot.receipts.map((r) => {
+    const settlement = settlements.get(r.id);
+    return {
+      id: r.id,
+      beneficiary: r.beneficiary as `0x${string}`,
+      swapTimestamp: r.swapTimestamp,
+      zeroForOne: r.zeroForOne,
+      settled: r.settled,
+      escrowAmount: BigInt(r.escrowAmount),
+      escrowCurrency: r.escrowCurrency as `0x${string}`,
+      drift: BigInt(r.drift),
+      ready: r.ready,
+      verdict: settlement
+        ? settlement.informed
+          ? ("informed" as const)
+          : ("benign" as const)
+        : verdictOf(r.settled, r.ready, BigInt(r.drift), THETA_BPS),
+      settlement,
+    };
+  });
+}
+
+export const snapshotCapturedAt = snapshot.capturedAt;
