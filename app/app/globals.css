@@ -26,6 +26,13 @@
   --color-pending: #f1b85b;
   --color-pending-soft: #2a2318;
 
+  /* chart marks need their own steps: the ui mint is text on a soft ground and
+     is too light as a fill against the dark surface. validated for the
+     lightness band and cvd separation against #f05b4a. */
+  --color-chart-benign: #28a874;
+  --color-chart-informed: #f05b4a;
+  --color-chart-grid: #262e2e;
+
   --color-accent: #f05b4a;
   --color-accent-hi: #ff6f5d;
 

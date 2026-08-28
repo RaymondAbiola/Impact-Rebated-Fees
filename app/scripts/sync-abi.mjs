@@ -60,4 +60,12 @@ export const erc20Abi = ${JSON.stringify(artifact("MockERC20"), null, 2)} as con
 `;
 
 writeFileSync(resolve(here, "../lib/generated.ts"), out);
+
+// the evidence screen reads the analysis output, so copy it in rather than
+// letting the app carry a second, drifting set of numbers
+const econ = resolve(here, "../../analysis/out/economics.json");
+if (existsSync(econ)) {
+  writeFileSync(resolve(here, "../data/economics.json"), readFileSync(econ));
+  console.log("copied analysis/out/economics.json");
+}
 console.log(`synced hook ${d.hook} on chain ${CHAIN_ID}`);

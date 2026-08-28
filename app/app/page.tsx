@@ -1,7 +1,17 @@
+import econ from "@/data/economics.json";
 import { HowItWorks } from "@/components/HowItWorks";
-import { Card, Chip, Label, Well } from "@/components/ui";
+import { DriftHistogram } from "@/components/DriftHistogram";
+import { TradeoffChart, type Cell } from "@/components/TradeoffChart";
+import { Card, Label } from "@/components/ui";
 
 export default function Home() {
+  const chosen = econ.chosen as Cell & {
+    recovery_pct: number;
+    extracted_usd: number;
+    informed_pct: number;
+  };
+  const hist = econ.drift_histogram;
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-20">
       <Label>Unichain Sepolia · live</Label>
@@ -19,29 +29,45 @@ export default function Home() {
       <div className="mt-12 grid gap-4 sm:grid-cols-3">
         <Card className="p-5">
           <Label>Uninformed trader pays</Label>
-          <p className="numeric mt-3 text-3xl">+0.71</p>
+          <p className="numeric mt-3 text-3xl">
+            +{chosen.uninformed_overcharge_bps.toFixed(2)}
+          </p>
           <p className="mt-1 text-sm text-ink-dim">bps over the base fee</p>
         </Card>
         <Card className="p-5">
           <Label>LP revenue</Label>
-          <p className="numeric mt-3 text-3xl text-benign">+32.7%</p>
+          <p className="numeric mt-3 text-3xl text-benign">
+            +{chosen.lp_uplift_pct.toFixed(1)}%
+          </p>
           <p className="mt-1 text-sm text-ink-dim">over base fee alone</p>
         </Card>
         <Card className="p-5">
           <Label>Flagged as informed</Label>
-          <p className="numeric mt-3 text-3xl text-informed">3.2%</p>
-          <p className="mt-1 text-sm text-ink-dim">of 26,209 real swaps</p>
+          <p className="numeric mt-3 text-3xl text-informed">
+            {chosen.informed_pct.toFixed(1)}%
+          </p>
+          <p className="mt-1 text-sm text-ink-dim">
+            of {econ.trades.toLocaleString()} real swaps
+          </p>
         </Card>
       </div>
 
-      <Well className="mt-4 flex flex-wrap items-center gap-3 p-5">
-        <Chip tone="benign">Benign · refunded</Chip>
-        <Chip tone="informed">Informed · paid to LPs</Chip>
-        <Chip tone="pending">Settling</Chip>
-        <span className="numeric ml-auto text-sm text-ink-faint">
-          window 60s · theta 20 bps
-        </span>
-      </Well>
+      <div className="mt-4 grid gap-4">
+        <DriftHistogram
+          edges={hist.edges_bps}
+          counts={hist.counts}
+          theta={hist.theta_bps}
+        />
+        <TradeoffChart grid={econ.grid as Cell[]} chosen={chosen} />
+      </div>
+
+      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink-faint">
+        Replayed from {econ.trades.toLocaleString()} real USDC/WETH swaps on mainnet,
+        fixture {econ.fixture}. The escrow recovers{" "}
+        <span className="numeric">{chosen.recovery_pct.toFixed(0)}%</span> of what
+        informed flow captured. Charging the full rate that would recover all of it
+        also doubles what ordinary traders pay, so the gap is deliberate.
+      </p>
 
       <HowItWorks />
     </main>

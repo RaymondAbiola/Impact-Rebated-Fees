@@ -119,6 +119,19 @@ def main():
         print(f"  LP revenue +{uplift:.1f}% over base fee alone")
         print(f"  uninformed trader pays +{over:.2f} bps in expectation")
 
+    # histogram for the chosen cell, binned so theta lands on a real edge
+    kb = max(1, round(config.K_SECONDS / config.BLOCK_SECONDS))
+    parts = diagnose.decompose(series, trades, kb)
+    drift_vals = [p[1] for p in parts if p is not None]
+    th = config.THETA_BPS
+    edges = [-100, -50, -30, -th, -10, -5, 0, 5, 10, th, 30, 50, 100]
+    counts = [0] * (len(edges) + 1)
+    for v in drift_vals:
+        i = 0
+        while i < len(edges) and v >= edges[i]:
+            i += 1
+        counts[i] += 1
+
     chosen = next(
         (g for g in grid if g["window_seconds"] == config.K_SECONDS and g["theta_bps"] == config.THETA_BPS),
         None,
@@ -131,6 +144,7 @@ def main():
         "escrow_fee_bps": config.ESCROW_FEE_BPS,
         "min_swap_usd": config.MIN_SWAP_USD,
         "chosen": chosen,
+        "drift_histogram": {"edges_bps": edges, "counts": counts, "theta_bps": th},
         "grid": grid,
     }, indent=2))
     print(f"\n-> {path.relative_to(config.ROOT.parent)}")
