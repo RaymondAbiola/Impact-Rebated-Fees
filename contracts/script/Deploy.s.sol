@@ -8,7 +8,6 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
-import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiquidityTest.sol";
@@ -28,7 +27,7 @@ contract Deploy is Script {
         address managerAddr = vm.envAddress("POOL_MANAGER");
         IPoolManager manager = IPoolManager(managerAddr);
 
-        uint160 flags = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+        uint160 flags = Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
         (address expected, bytes32 salt) =
             HookMiner.find(CREATE2_DEPLOYER, flags, type(ImpactRebatedFees).creationCode, abi.encode(manager));
 
@@ -46,7 +45,7 @@ contract Deploy is Script {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(t0)),
             currency1: Currency.wrap(address(t1)),
-            fee: LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            fee: 500,
             tickSpacing: 60,
             hooks: IHooks(address(hook))
         });

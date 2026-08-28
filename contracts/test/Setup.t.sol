@@ -19,7 +19,7 @@ contract CompileProbe is BaseHook {
             afterAddLiquidity: false,
             beforeRemoveLiquidity: false,
             afterRemoveLiquidity: false,
-            beforeSwap: true,
+            beforeSwap: false,
             afterSwap: true,
             beforeDonate: false,
             afterDonate: false,
@@ -43,7 +43,6 @@ contract SetupTest is Test {
     }
 
     function test_hookFlagsResolve() public pure {
-        assertTrue(Hooks.BEFORE_SWAP_FLAG != 0);
         assertTrue(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG != 0);
     }
 }

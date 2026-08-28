@@ -9,7 +9,6 @@ import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {SwapParams, ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {PoolSwapTest} from "@uniswap/v4-core/src/test/PoolSwapTest.sol";
 import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiquidityTest.sol";
@@ -62,7 +61,7 @@ contract Handler is Test {
 }
 
 contract InvariantTest is Test {
-    address constant HOOK_ADDR = address(uint160(0x9999 << 144) | uint160(0xC4));
+    address constant HOOK_ADDR = address(uint160(0x9999 << 144) | uint160(0x44));
 
     PoolManager manager;
     ImpactRebatedFees hook;
@@ -85,7 +84,7 @@ contract InvariantTest is Test {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(token0)),
             currency1: Currency.wrap(address(token1)),
-            fee: LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            fee: 500,
             tickSpacing: 60,
             hooks: IHooks(HOOK_ADDR)
         });

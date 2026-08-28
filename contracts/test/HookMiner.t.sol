@@ -9,7 +9,7 @@ import {HookMiner} from "../src/HookMiner.sol";
 
 contract HookMinerTest is Test {
     uint160 internal constant FLAGS =
-        Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+        Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
 
     function test_minesImpactRebatedFeesPermissionAddress() public {
         (address hook, bytes32 salt) = HookMiner.find(

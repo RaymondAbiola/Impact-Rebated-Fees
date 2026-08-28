@@ -11,7 +11,6 @@ import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {SwapParams, ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {PoolSwapTest} from "@uniswap/v4-core/src/test/PoolSwapTest.sol";
 import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiquidityTest.sol";
@@ -20,8 +19,8 @@ import {IImpactRebatedFees} from "../src/interfaces/IImpactRebatedFees.sol";
 import {Params} from "../src/Params.sol";
 
 contract SettlementTest is Test {
-    // low 14 bits must be beforeSwap | afterSwap | afterSwapReturnsDelta
-    address constant HOOK_ADDR = address(uint160(0x8888 << 144) | uint160(0xC4));
+    // low 14 bits must be afterSwap | afterSwapReturnsDelta
+    address constant HOOK_ADDR = address(uint160(0x8888 << 144) | uint160(0x44));
 
     PoolManager manager;
     ImpactRebatedFees hook;
@@ -54,7 +53,7 @@ contract SettlementTest is Test {
         key = PoolKey({
             currency0: Currency.wrap(address(token0)),
             currency1: Currency.wrap(address(token1)),
-            fee: LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            fee: 500,
             tickSpacing: 60,
             hooks: IHooks(HOOK_ADDR)
         });

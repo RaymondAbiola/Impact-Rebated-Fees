@@ -8,8 +8,6 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
-import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {Params} from "./Params.sol";
 import {IImpactRebatedFees} from "./interfaces/IImpactRebatedFees.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
@@ -21,7 +19,6 @@ import {IUnlockCallback} from "@uniswap/v4-core/src/interfaces/callback/IUnlockC
 contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
-    using LPFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
 
     uint256 public nextReceiptId;
@@ -38,7 +35,6 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     mapping(address currency => uint128 minimum) public minEscrow;
 
     error InvalidHookData();
-    error NonDynamicFeePool();
     error AlreadySettled();
     error WindowNotElapsed();
     error Unauthorized();
@@ -49,7 +45,7 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
     }
 
     uint160 public constant HOOK_FLAGS =
-        Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+        Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
 
     constructor(IPoolManager manager) BaseHook(manager) {
         owner = msg.sender;
@@ -90,7 +86,7 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
             afterAddLiquidity: false,
             beforeRemoveLiquidity: false,
             afterRemoveLiquidity: false,
-            beforeSwap: true,
+            beforeSwap: false,
             afterSwap: true,
             beforeDonate: false,
             afterDonate: false,
@@ -99,20 +95,6 @@ contract ImpactRebatedFees is BaseHook, IImpactRebatedFees, IUnlockCallback {
             afterAddLiquidityReturnDelta: false,
             afterRemoveLiquidityReturnDelta: false
         });
-    }
-
-    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata, bytes calldata)
-        internal
-        pure
-        override
-        returns (bytes4, BeforeSwapDelta, uint24)
-    {
-        if (!key.fee.isDynamicFee()) revert NonDynamicFeePool();
-        return (
-            IHooks.beforeSwap.selector,
-            BeforeSwapDeltaLibrary.ZERO_DELTA,
-            Params.BASE_FEE | LPFeeLibrary.OVERRIDE_FEE_FLAG
-        );
     }
 
     function _afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData)

@@ -33,7 +33,7 @@ contract ReplayHarness is ImpactRebatedFees {
 }
 
 contract ReplayTest is Test {
-    address constant HOOK_ADDR = address(uint160(0x7777 << 144) | uint160(0xC4));
+    address constant HOOK_ADDR = address(uint160(0x7777 << 144) | uint160(0x44));
     PoolId constant POOL = PoolId.wrap(bytes32(uint256(1)));
 
     ReplayHarness hook;

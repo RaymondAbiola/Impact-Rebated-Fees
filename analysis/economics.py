@@ -11,6 +11,7 @@ A cell that recovers a lot but overcharges ordinary traders breaks the promise
 the mechanism is built on, so it is not a win.
 """
 
+import json
 import random
 
 import classify
@@ -58,6 +59,7 @@ def main():
     print(f"{'win':>5s} {'theta':>6s} {'inf%':>6s} {'null%':>6s} {'fair esc':>9s} "
           f"{'recov%':>7s} {'LP+':>7s} {'overchg':>8s} {'net':>8s}")
 
+    grid = []
     best = None
     for secs in WINDOWS:
         kb = max(1, round(secs / config.BLOCK_SECONDS))
@@ -87,6 +89,22 @@ def main():
                   f"{r['fair_escrow_bps']:8.1f}b {recovery:7.1f} {lp_uplift:6.1f}% "
                   f"{overcharge_bps:7.2f}b {net:8,.0f}")
 
+            grid.append({
+                "window_seconds": secs,
+                "theta_bps": th,
+                "informed_pct": r["informed_pct"],
+                "null_informed_pct": nl["informed_pct"],
+                "informed_volume_usd": r["informed_vol"],
+                "benign_volume_usd": r["benign_vol"],
+                "extracted_usd": r["extracted"],
+                "recovered_usd": r["recovered"],
+                "recovery_pct": recovery,
+                "fair_escrow_bps": r["fair_escrow_bps"],
+                "lp_uplift_pct": lp_uplift,
+                "uninformed_overcharge_bps": overcharge_bps,
+                "net_usd": net,
+            })
+
             if overcharge_bps <= 1.0 and (best is None or net > best[0]):
                 best = (net, secs, th, r, nl, overcharge_bps, recovery, lp_uplift)
 
@@ -100,6 +118,22 @@ def main():
         print(f"  fair escrow at this theta would be {r['fair_escrow_bps']:.0f} bps")
         print(f"  LP revenue +{uplift:.1f}% over base fee alone")
         print(f"  uninformed trader pays +{over:.2f} bps in expectation")
+
+    chosen = next(
+        (g for g in grid if g["window_seconds"] == config.K_SECONDS and g["theta_bps"] == config.THETA_BPS),
+        None,
+    )
+    config.OUT.mkdir(exist_ok=True)
+    path = config.OUT / "economics.json"
+    path.write_text(json.dumps({
+        "fixture": sorted(config.FIXTURES.glob("swaps_*.csv"))[-1].name,
+        "trades": len(trades),
+        "escrow_fee_bps": config.ESCROW_FEE_BPS,
+        "min_swap_usd": config.MIN_SWAP_USD,
+        "chosen": chosen,
+        "grid": grid,
+    }, indent=2))
+    print(f"\n-> {path.relative_to(config.ROOT.parent)}")
 
 
 if __name__ == "__main__":
