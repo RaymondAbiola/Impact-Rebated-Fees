@@ -231,4 +231,59 @@ contract SettlementTest is Test {
         emit log_named_uint("swap with hook (gas)", swapGas);
         emit log_named_uint("settle (gas)", settleGas);
     }
+
+    function test_settleBatchSettlesEverythingReady() public {
+        _swap(true, -1 ether);
+        _swap(false, -1 ether);
+        _swap(true, -1 ether);
+        assertEq(hook.nextReceiptId(), 3);
+
+        vm.warp(block.timestamp + Params.SETTLEMENT_WINDOW_SECONDS + 1);
+        uint256[] memory ids = new uint256[](3);
+        ids[0] = 0;
+        ids[1] = 1;
+        ids[2] = 2;
+        hook.settleBatch(ids);
+
+        for (uint256 i; i < 3; ++i) {
+            (,,,, bool settled,,,,) = hook.receipts(i);
+            assertTrue(settled, "receipt left unsettled");
+        }
+        assertEq(hook.escrowed(address(token0)), 0);
+        assertEq(hook.escrowed(address(token1)), 0);
+    }
+
+    /// The whole point of the batch path: one bad id must not strand the rest.
+    function test_settleBatchSkipsRatherThanReverting() public {
+        _swap(true, -1 ether);
+        _swap(true, -1 ether);
+
+        vm.warp(block.timestamp + Params.SETTLEMENT_WINDOW_SECONDS + 1);
+        hook.settle(0);
+
+        _swap(true, -1 ether); // fresh, window still open
+        uint256[] memory ids = new uint256[](3);
+        ids[0] = 0; // already settled
+        ids[1] = 1; // ready
+        ids[2] = 2; // too early
+        hook.settleBatch(ids);
+
+        (,,,, bool one,,,,) = hook.receipts(1);
+        (,,,, bool two,,,,) = hook.receipts(2);
+        assertTrue(one, "ready receipt was skipped");
+        assertFalse(two, "early receipt was settled anyway");
+    }
+
+    function test_settleBatchToleratesUnknownIds() public {
+        _swap(true, -1 ether);
+        vm.warp(block.timestamp + Params.SETTLEMENT_WINDOW_SECONDS + 1);
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 0;
+        ids[1] = 999; // never existed
+        hook.settleBatch(ids);
+
+        (,,,, bool settled,,,,) = hook.receipts(0);
+        assertTrue(settled);
+    }
 }
