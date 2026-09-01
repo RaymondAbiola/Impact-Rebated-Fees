@@ -120,6 +120,13 @@ swap price excludes the trade's own footprint entirely.
   deliberate.
 - Not audited. The demo pool uses mock tokens with an unguarded mint.
 
+## Partner integrations
+
+**None.** This hook deliberately uses no oracle and no off chain service. The
+pool's own price path is the entire signal, so there is nothing to integrate
+without giving up the property that makes it different: every comparable design
+depends on Pyth, Chainlink, or an AVS, and this one depends on nothing.
+
 ## Deployment
 
 Unichain Sepolia, chain id 1301.
