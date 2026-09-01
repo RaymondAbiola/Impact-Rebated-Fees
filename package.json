@@ -4,16 +4,16 @@
   "private": true,
   "description": "Uniswap v4 hook that settles swap fees after the fact based on realised markout",
   "scripts": {
-    "dev": "npm --prefix app run dev",
-    "build": "npm --prefix app run build",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
     "test": "forge test --root contracts",
     "analyze": "python3 analysis/economics.py",
     "check": "npm run test && npm run build && npm run lint",
     "fetch": "python3 analysis/fetch.py",
-    "lint": "npm --prefix app run lint",
+    "lint": "npm --prefix frontend run lint",
     "seed": "forge script script/Seed.s.sol --sig \"demo()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
     "settle": "forge script script/Seed.s.sol --sig \"settle()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
-    "snapshot": "npm --prefix app run snapshot"
+    "snapshot": "npm --prefix frontend run snapshot"
   },
   "license": "MIT"
 }

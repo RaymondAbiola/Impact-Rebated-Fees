@@ -164,7 +164,7 @@ npm run dev               # frontend
 
 ```
 contracts/   foundry project, the hook and its tests
-app/         next.js frontend
+frontend/    next.js frontend
 analysis/    offline classifier, gate, and parameter choice
 docs/        mechanism spec
 ```
