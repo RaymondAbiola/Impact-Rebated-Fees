@@ -27,7 +27,7 @@ export function QueueRow({
   const waiting = !r.settled && remaining > 0;
 
   return (
-    <div className="grid grid-cols-[3rem_1fr_auto] items-center gap-4 border-b border-line-soft px-5 py-4 last:border-0">
+    <div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-line-soft px-4 py-4 last:border-0 sm:grid-cols-[3rem_1fr_auto] sm:gap-4 sm:px-5">
       <span className="numeric text-sm text-ink-faint">#{r.id}</span>
 
       <div className="min-w-0">
@@ -40,7 +40,7 @@ export function QueueRow({
 
         {waiting ? (
           <div className="mt-2 flex items-center gap-3">
-            <div className="h-1 w-40 overflow-hidden rounded-full bg-ground">
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-ground sm:w-40">
               <div
                 className="h-full rounded-full bg-pending transition-[width] duration-1000 ease-linear"
                 style={{ width: `${progress * 100}%` }}

@@ -19,11 +19,13 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-line-soft bg-bg/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
-        <Link href="/" className="text-sm tracking-tight">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="flex h-14 items-center gap-4 sm:h-16 sm:gap-6">
+        <Link href="/" className="shrink-0 text-sm tracking-tight">
           Impact<span className="text-accent">·</span>Rebated
         </Link>
 
+        {/* on phones the tabs move to their own row below, see further down */}
         <nav className="hidden gap-1 sm:flex">
           {links.map((l) => (
             <Link
@@ -39,7 +41,7 @@ export function Nav() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <span className="numeric hidden rounded-full border border-line px-3 py-1.5 text-xs text-ink-faint sm:inline">
             Unichain Sepolia
           </span>
@@ -60,6 +62,22 @@ export function Nav() {
             </button>
           )}
         </div>
+      </div>
+
+      <nav className="flex gap-1 pb-2 sm:hidden">
+        {links.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className={clsx(
+              "flex-1 rounded-full px-2 py-1.5 text-center text-sm transition-colors",
+              path === l.href ? "bg-elevated text-ink" : "text-ink-dim",
+            )}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
       </div>
     </header>
   );

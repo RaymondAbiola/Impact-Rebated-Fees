@@ -13,9 +13,9 @@ export default function Home() {
   const hist = econ.drift_histogram;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-20">
+    <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
       <Label>Unichain Sepolia · live</Label>
-      <h1 className="mt-6 max-w-3xl text-5xl leading-[1.05] tracking-tight sm:text-6xl">
+      <h1 className="mt-6 max-w-3xl text-4xl leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
         A security deposit
         <br />
         on every swap.

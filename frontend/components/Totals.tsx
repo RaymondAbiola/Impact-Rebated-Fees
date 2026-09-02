@@ -33,21 +33,21 @@ export function Totals({ receipts }: { receipts: ReceiptView[] }) {
     <div className="grid gap-4 sm:grid-cols-3">
       <div className="raised rounded-3xl p-5">
         <Label>Refunded to traders</Label>
-        <p className="numeric mt-3 text-lg text-benign">{render(refunded)}</p>
+        <p className="numeric mt-3 break-words text-base text-benign sm:text-lg">{render(refunded)}</p>
         <p className="mt-1 text-xs text-ink-faint">
           {settled.length - informedCount} of {settled.length} settled
         </p>
       </div>
       <div className="raised rounded-3xl p-5">
         <Label>Paid to LPs</Label>
-        <p className="numeric mt-3 text-lg text-informed">{render(toLps)}</p>
+        <p className="numeric mt-3 break-words text-base text-informed sm:text-lg">{render(toLps)}</p>
         <p className="mt-1 text-xs text-ink-faint">
           {informedCount} flagged informed
         </p>
       </div>
       <div className="raised rounded-3xl p-5">
         <Label>Keeper bounties</Label>
-        <p className="numeric mt-3 text-lg text-ink-dim">{fmtUnits(bounty, 18, 6)}</p>
+        <p className="numeric mt-3 break-words text-base text-ink-dim sm:text-lg">{fmtUnits(bounty, 18, 6)}</p>
         <p className="mt-1 text-xs text-ink-faint">2% of each escrow</p>
       </div>
     </div>
