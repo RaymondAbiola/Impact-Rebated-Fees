@@ -107,7 +107,7 @@ export function SwapCard() {
         <button
           disabled={!isConnected || parsed <= 0n || stage === "approving" || stage === "swapping"}
           onClick={() => swap(zeroForOne, parsed)}
-          className="w-full rounded-2xl bg-accent py-3 text-sm text-ground transition-colors hover:bg-accent-hi disabled:bg-elevated disabled:text-ink-faint"
+          className="w-full rounded-2xl bg-accent-solid py-3 text-sm text-on-accent transition-colors hover:bg-accent-hi disabled:bg-elevated disabled:text-ink-faint"
         >
           {!isConnected
             ? "Connect a wallet"

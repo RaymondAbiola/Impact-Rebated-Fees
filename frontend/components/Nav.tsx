@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { clsx } from "./clsx";
+import { ThemeToggle } from "./ThemeToggle";
 
 const links = [
   { href: "/", label: "Evidence" },
@@ -45,6 +46,7 @@ export function Nav() {
           <span className="numeric hidden rounded-full border border-line px-3 py-1.5 text-xs text-ink-faint sm:inline">
             Unichain Sepolia
           </span>
+          <ThemeToggle />
           {isConnected ? (
             <button
               onClick={() => disconnect()}
@@ -56,7 +58,7 @@ export function Nav() {
             <button
               disabled={isPending}
               onClick={() => connect({ connector: connectors[0] })}
-              className="rounded-full bg-accent px-4 py-1.5 text-sm text-ground transition-colors hover:bg-accent-hi disabled:opacity-60"
+              className="rounded-full bg-accent-solid px-4 py-1.5 text-sm text-on-accent transition-colors hover:bg-accent-hi disabled:opacity-60"
             >
               {isPending ? "Connecting" : "Connect"}
             </button>

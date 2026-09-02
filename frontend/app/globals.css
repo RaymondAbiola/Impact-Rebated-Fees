@@ -1,10 +1,81 @@
 @import "tailwindcss";
 
-/* Sampled from the reference: cool charcoal chrome with a faint cyan cast,
-   soft-UI surfaces, and three saturated accents. The reference ships the same
-   interface in coral, mint and amber, which maps straight onto our three
-   receipt states. */
+/* Light is the base, dark overrides it. Both are chosen, not inverted: the
+   accents that work on charcoal fail contrast on paper, so each mode has its own
+   steps, all above 3:1 against their surface. */
 @theme {
+  --color-ground: #e6eae9;
+  --color-bg: #f1f4f3;
+  --color-surface: #fbfcfc;
+  --color-elevated: #ffffff;
+  --color-line: #d7dddc;
+  --color-line-soft: #e4e9e8;
+
+  --color-ink: #141a1a;
+  --color-ink-dim: #55605e;
+  --color-ink-faint: #838d8b;
+
+  --color-informed: #d9432f;
+  --color-informed-soft: #fbe7e3;
+  --color-benign: #16875a;
+  --color-benign-soft: #dff3ea;
+  --color-pending: #9a6b12;
+  --color-pending-soft: #f7eeda;
+
+  --color-accent: #d9432f;
+  --color-accent-hi: #c2381f;
+  /* button fills carry a label, so they need more contrast than a chart mark */
+  --color-accent-solid: #c93a26;
+  --color-on-accent: #ffffff;
+
+  --color-chart-benign: #16875a;
+  --color-chart-informed: #d9432f;
+  --color-chart-grid: #dde3e2;
+
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+
+  /* soft-ui needs opposite shadows per mode: lifted on paper is a soft grey
+     drop, lifted on charcoal is a black drop with a faint white edge */
+  --shadow-raised: 4px 6px 16px rgb(20 26 26 / 0.10), -1px -1px 2px rgb(255 255 255 / 0.9);
+  --shadow-inset: inset 3px 4px 10px rgb(20 26 26 / 0.07), inset -1px -1px 2px rgb(255 255 255 / 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-ground: #0f1414;
+    --color-bg: #161b1b;
+    --color-surface: #1c2222;
+    --color-elevated: #242b2c;
+    --color-line: #2e3637;
+    --color-line-soft: #222a2a;
+
+    --color-ink: #e8edec;
+    --color-ink-dim: #8e9998;
+    --color-ink-faint: #5c6666;
+
+    --color-informed: #f05b4a;
+    --color-informed-soft: #2a1a18;
+    --color-benign: #3fe39b;
+    --color-benign-soft: #142622;
+    --color-pending: #f1b85b;
+    --color-pending-soft: #2a2318;
+
+    --color-accent: #f05b4a;
+    --color-accent-hi: #ff6f5d;
+    --color-accent-solid: #f05b4a;
+    --color-on-accent: #0f1414;
+
+    --color-chart-benign: #28a874;
+    --color-chart-informed: #f05b4a;
+    --color-chart-grid: #262e2e;
+
+    --shadow-raised: 6px 6px 16px rgb(0 0 0 / 0.45), -1px -1px 1px rgb(255 255 255 / 0.03);
+    --shadow-inset: inset 4px 4px 10px rgb(0 0 0 / 0.5), inset -1px -1px 2px rgb(255 255 255 / 0.02);
+  }
+}
+
+:root[data-theme="dark"] {
   --color-ground: #0f1414;
   --color-bg: #161b1b;
   --color-surface: #1c2222;
@@ -16,31 +87,35 @@
   --color-ink-dim: #8e9998;
   --color-ink-faint: #5c6666;
 
-  /* informed: the pool caught you, escrow goes to the LPs */
   --color-informed: #f05b4a;
   --color-informed-soft: #2a1a18;
-  /* benign: nothing to answer for, escrow comes back */
   --color-benign: #3fe39b;
   --color-benign-soft: #142622;
-  /* still inside the settlement window */
   --color-pending: #f1b85b;
   --color-pending-soft: #2a2318;
 
-  /* chart marks need their own steps: the ui mint is text on a soft ground and
-     is too light as a fill against the dark surface. validated for the
-     lightness band and cvd separation against #f05b4a. */
+  --color-accent: #f05b4a;
+  --color-accent-hi: #ff6f5d;
+  --color-accent-solid: #f05b4a;
+  --color-on-accent: #0f1414;
+
   --color-chart-benign: #28a874;
   --color-chart-informed: #f05b4a;
   --color-chart-grid: #262e2e;
 
-  --color-accent: #f05b4a;
-  --color-accent-hi: #ff6f5d;
-
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+  --shadow-raised: 6px 6px 16px rgb(0 0 0 / 0.45), -1px -1px 1px rgb(255 255 255 / 0.03);
+  --shadow-inset: inset 4px 4px 10px rgb(0 0 0 / 0.5), inset -1px -1px 2px rgb(255 255 255 / 0.02);
 }
 
 html {
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
 }
 
@@ -58,22 +133,17 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* soft-UI: lifted off the background by shadow rather than by a border */
 .raised {
   background: var(--color-surface);
-  box-shadow:
-    6px 6px 16px rgb(0 0 0 / 0.45),
-    -1px -1px 1px rgb(255 255 255 / 0.03);
+  box-shadow: var(--shadow-raised);
 }
 
 .inset {
   background: var(--color-ground);
-  box-shadow:
-    inset 4px 4px 10px rgb(0 0 0 / 0.5),
-    inset -1px -1px 2px rgb(255 255 255 / 0.02);
+  box-shadow: var(--shadow-inset);
 }
 
-/* keyboard users get a real focus ring, not the browser default on a dark ground */
+/* keyboard users get a real focus ring, not the browser default */
 :where(a, button, input, [tabindex]):focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -106,5 +176,5 @@ body {
 
 ::selection {
   background: var(--color-accent);
-  color: var(--color-ground);
+  color: var(--color-surface);
 }

@@ -47,7 +47,7 @@ export function Queue() {
             <button
               disabled={busy !== null}
               onClick={() => settleMany(ready)}
-              className="rounded-full bg-accent px-3 py-1 text-xs text-ground transition-colors hover:bg-accent-hi disabled:opacity-50"
+              className="rounded-full bg-accent-solid px-3 py-1 text-xs text-on-accent transition-colors hover:bg-accent-hi disabled:opacity-50"
             >
               {busy === "batch" ? "settling" : `settle ${ready.length} ready`}
             </button>

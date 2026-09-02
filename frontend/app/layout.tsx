@@ -39,7 +39,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${instrument.variable} ${plexMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${instrument.variable} ${plexMono.variable}`}>
+      <head>
+        {/* set the theme before first paint, otherwise a dark-mode user sees a
+            white flash on every page load */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("irf-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-dvh bg-bg text-ink font-sans antialiased">
         <Providers>
           <Nav />
