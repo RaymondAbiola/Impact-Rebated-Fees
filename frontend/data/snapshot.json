@@ -1,7 +1,51 @@
 {
-  "capturedAt": 1787957533,
-  "count": 9,
+  "capturedAt": 1788387887,
+  "count": 13,
   "receipts": [
+    {
+      "id": 12,
+      "beneficiary": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
+      "swapTimestamp": 1788387764,
+      "zeroForOne": false,
+      "settled": true,
+      "escrowAmount": "530917355843779",
+      "escrowCurrency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
+      "drift": "0",
+      "ready": true
+    },
+    {
+      "id": 11,
+      "beneficiary": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
+      "swapTimestamp": 1788387760,
+      "zeroForOne": false,
+      "settled": true,
+      "escrowAmount": "796581181884677",
+      "escrowCurrency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
+      "drift": "3",
+      "ready": true
+    },
+    {
+      "id": 10,
+      "beneficiary": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
+      "swapTimestamp": 1788387757,
+      "zeroForOne": true,
+      "settled": true,
+      "escrowAmount": "59498371086680191",
+      "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
+      "drift": "-6",
+      "ready": true
+    },
+    {
+      "id": 9,
+      "beneficiary": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
+      "swapTimestamp": 1788387752,
+      "zeroForOne": true,
+      "settled": true,
+      "escrowAmount": "963841612302041",
+      "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
+      "drift": "230",
+      "ready": true
+    },
     {
       "id": 8,
       "beneficiary": "0x586E54DBEBd2999ef49f73632630AA8A689C6A6C",
@@ -43,7 +87,7 @@
       "settled": true,
       "escrowAmount": "987818217338285",
       "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
-      "drift": "231",
+      "drift": "242",
       "ready": true
     },
     {
@@ -54,7 +98,7 @@
       "settled": true,
       "escrowAmount": "247015909579758",
       "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
-      "drift": "46",
+      "drift": "245",
       "ready": true
     },
     {
@@ -65,7 +109,7 @@
       "settled": true,
       "escrowAmount": "631965969316021",
       "escrowCurrency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
-      "drift": "-9",
+      "drift": "-244",
       "ready": true
     },
     {
@@ -76,7 +120,7 @@
       "settled": true,
       "escrowAmount": "29813681715517306",
       "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
-      "drift": "6",
+      "drift": "241",
       "ready": true
     },
     {
@@ -87,7 +131,7 @@
       "settled": true,
       "escrowAmount": "1874296494451729",
       "escrowCurrency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
-      "drift": "-126",
+      "drift": "-361",
       "ready": true
     },
     {
@@ -98,11 +142,47 @@
       "settled": true,
       "escrowAmount": "1249062890410258",
       "escrowCurrency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
-      "drift": "118",
+      "drift": "354",
       "ready": true
     }
   ],
   "settlements": [
+    {
+      "id": 9,
+      "informed": true,
+      "drift": "228",
+      "currency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
+      "payout": "944564780056001",
+      "bounty": "19276832246040",
+      "expired": false
+    },
+    {
+      "id": 10,
+      "informed": false,
+      "drift": "-6",
+      "currency": "0x818EB378DcAE64a4012c5bF0fDCC24c96fcBE57a",
+      "payout": "58308403664946588",
+      "bounty": "1189967421733603",
+      "expired": false
+    },
+    {
+      "id": 11,
+      "informed": false,
+      "drift": "3",
+      "currency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
+      "payout": "780649558246984",
+      "bounty": "15931623637693",
+      "expired": false
+    },
+    {
+      "id": 12,
+      "informed": false,
+      "drift": "0",
+      "currency": "0x6BdACF5421d27aE8E88405d135e8A291F7B34B31",
+      "payout": "520299008726904",
+      "bounty": "10618347116875",
+      "expired": false
+    },
     {
       "id": 0,
       "informed": true,

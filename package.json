@@ -11,8 +11,8 @@
     "check": "npm run test && npm run build && npm run lint",
     "fetch": "python3 analysis/fetch.py",
     "lint": "npm --prefix frontend run lint",
-    "seed": "forge script script/Seed.s.sol --sig \"demo()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
-    "settle": "forge script script/Seed.s.sol --sig \"settle()\" --root contracts --rpc-url https://sepolia.unichain.org --broadcast --slow",
+    "seed": "cd contracts && set -a && . ./.env && set +a && forge script script/Seed.s.sol --rpc-url https://sepolia.unichain.org --broadcast --slow --private-key $PRIVATE_KEY --sig \"demo()\"",
+    "settle": "cd contracts && set -a && . ./.env && set +a && forge script script/Seed.s.sol --rpc-url https://sepolia.unichain.org --broadcast --slow --private-key $PRIVATE_KEY --sig \"settle()\"",
     "snapshot": "npm --prefix frontend run snapshot"
   },
   "license": "MIT"
