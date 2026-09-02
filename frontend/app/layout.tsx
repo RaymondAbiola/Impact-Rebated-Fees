@@ -17,10 +17,24 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const description =
+  "A Uniswap v4 hook that charges every swap a deposit, then gives it back sixty seconds later unless the pool was still mispriced after the trade.";
+
 export const metadata: Metadata = {
-  title: "Impact Rebated Fees",
-  description:
-    "A Uniswap v4 hook that charges every swap up front and refunds it unless the trade actually cost the pool.",
+  metadataBase: new URL("https://impact-rebated-fees.vercel.app"),
+  title: {
+    default: "Impact Rebated Fees",
+    template: "%s · Impact Rebated Fees",
+  },
+  description,
+  openGraph: {
+    title: "Impact Rebated Fees",
+    description,
+    url: "/",
+    siteName: "Impact Rebated Fees",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "Impact Rebated Fees", description },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

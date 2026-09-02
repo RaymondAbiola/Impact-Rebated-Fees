@@ -3,6 +3,9 @@
 import { useChainTime } from "@/lib/useChainTime";
 import { snapshotCapturedAt, snapshotReceipts, useReceiptCount, useReceipts } from "@/lib/hooks";
 import { Label } from "./ui";
+import { addresses } from "@/lib/generated";
+import { EXPLORER } from "@/lib/useSwap";
+import { short } from "@/lib/format";
 import { QueueRow } from "./QueueRow";
 import { Totals } from "./Totals";
 import { useSettle } from "@/lib/useSettle";
@@ -25,7 +28,17 @@ export function Queue() {
 
       <div className="raised overflow-hidden rounded-3xl">
       <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
-        <Label>Receipts</Label>
+        <div className="flex items-baseline gap-3">
+          <Label>Receipts</Label>
+          <a
+            href={`${EXPLORER}/address/${addresses.hook}`}
+            target="_blank"
+            rel="noreferrer"
+            className="numeric text-[0.68rem] text-ink-faint transition-colors hover:text-accent"
+          >
+            {short(addresses.hook)}
+          </a>
+        </div>
         <div className="flex items-center gap-3">
           <span className="numeric text-xs text-ink-faint">
             {count !== undefined ? `${count} total` : "—"}

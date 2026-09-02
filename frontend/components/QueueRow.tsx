@@ -4,6 +4,7 @@ import { SETTLEMENT_WINDOW_SECONDS, type ReceiptView } from "@/lib/hooks";
 import { addresses } from "@/lib/generated";
 import { fmtUnits, short } from "@/lib/format";
 import { Chip } from "./ui";
+import { EXPLORER } from "@/lib/useSwap";
 import { useSettle } from "@/lib/useSettle";
 
 const tokenOf = (c: string) =>
@@ -51,7 +52,15 @@ export function QueueRow({
         ) : (
           <p className="numeric mt-2 text-xs text-ink-faint">
             drift {r.drift > 0n ? "+" : ""}
-            {r.drift.toString()} ticks · to {short(r.beneficiary)}
+            {r.drift.toString()} ticks · to{" "}
+            <a
+              href={`${EXPLORER}/address/${r.beneficiary}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-ink-dim hover:underline"
+            >
+              {short(r.beneficiary)}
+            </a>
           </p>
         )}
       </div>
@@ -59,10 +68,12 @@ export function QueueRow({
       <div className="text-right">
         {waiting ? (
           <Chip tone="pending">Settling</Chip>
-        ) : r.verdict === "informed" ? (
-          <Chip tone="informed">Informed</Chip>
         ) : (
-          <Chip tone="benign">Benign</Chip>
+          <span key={r.verdict} className="settled-in inline-block">
+            <Chip tone={r.verdict === "informed" ? "informed" : "benign"}>
+              {r.verdict === "informed" ? "Informed" : "Benign"}
+            </Chip>
+          </span>
         )}
         {r.settled ? (
           <p className="numeric mt-2 text-[0.68rem] text-ink-faint">
