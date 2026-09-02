@@ -16,9 +16,13 @@ trade is followed by the price continuing in the same direction, it means the
 pool was still quoting the wrong price after that trade finished. It is about to
 be traded against again, at a price that is still stale.
 
-Pools defend themselves by charging everyone the same fee, so ordinary traders
-subsidise this. This hook charges the trades that leave the pool still
-mispriced, instead of everyone.
+A pool has one fee and no way to tell those traders apart, so it charges
+everyone enough to survive them. The result is that someone swapping a few
+hundred dollars pays a fee sized for damage they did not cause.
+
+This hook charges the trades that leave the pool still mispriced, and gives
+everyone else their money back. On a week of real flow that costs an ordinary
+trader 0.71 bps in expectation, while lifting LP revenue by a third.
 
 ## How it works
 

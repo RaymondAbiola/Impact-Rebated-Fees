@@ -1,5 +1,6 @@
 import econ from "@/data/economics.json";
 import { HowItWorks } from "@/components/HowItWorks";
+import { Compare } from "@/components/Compare";
 import { DriftHistogram } from "@/components/DriftHistogram";
 import { TradeoffChart, type Cell } from "@/components/TradeoffChart";
 import { Card, Label } from "@/components/ui";
@@ -20,10 +21,15 @@ export default function Home() {
         <br />
         on every swap.
       </h1>
-      <p className="mt-6 max-w-xl text-ink-dim">
-        Every trade pays the full fee up front. Sixty seconds later the pool checks
-        whether the price kept moving in your favour. If it did not, you get most of
-        it back.
+      <p className="mt-6 max-w-2xl text-ink-dim">
+        Someone swapping five hundred dollars pays the same fee as a bot that just
+        took money off the pool. A pool has one fee and no way to tell them apart,
+        so it charges everyone enough to survive the bot.
+      </p>
+      <p className="mt-4 max-w-2xl text-ink-dim">
+        This hook charges a deposit on every swap and gives it back sixty seconds
+        later, unless the price kept drifting your way and the pool was still
+        mispriced after you left.
       </p>
 
       <div className="mt-12 grid gap-4 sm:grid-cols-3">
@@ -70,6 +76,7 @@ export default function Home() {
       </p>
 
       <HowItWorks />
+      <Compare />
     </main>
   );
 }
