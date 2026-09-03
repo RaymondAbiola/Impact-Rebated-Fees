@@ -140,6 +140,26 @@
   .panel .who { margin-top: 20px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
 
   /* chips ----------------------------------------------------------- */
+  .cover-title { font-size: clamp(46px, 8vw, 116px); line-height: .98; letter-spacing: -0.035em; }
+  .is-cover { gap: clamp(20px, 3vh, 36px); }
+
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(24px, 4vw, 64px);
+    padding-top: clamp(18px, 3vh, 32px);
+    border-top: 1px solid var(--line-soft);
+    max-width: 1000px;
+  }
+  .byline > div { display: flex; flex-direction: column; gap: 6px; }
+  .byline-k {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .byline-v { font-size: clamp(15px, 1.5vw, 19px); color: var(--ink); }
+
+  @media (max-height: 780px) { .cover-title { font-size: clamp(40px, 6.4vw, 82px); } }
+
   .chips { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip { border-radius: 999px; padding: 8px 18px; font-size: clamp(13px, 1.2vw, 16px); }
   .chip.benign { background: var(--mint-soft); color: var(--mint); }
@@ -215,8 +235,29 @@
 
 <div class="deck" id="deck">
 
+  <!-- 0 -->
+  <section class="slide is-active is-cover">
+    <p class="eyebrow">Uniswap Hook Incubator &middot; UHI10 Hookathon</p>
+    <h1 class="cover-title">Impact<br>Rebated Fees</h1>
+    <p class="lede">A Uniswap v4 hook that charges every swap a refundable deposit, then uses the pool&rsquo;s own price to decide who keeps it.</p>
+    <div class="byline">
+      <div>
+        <span class="byline-k">Built and presented by</span>
+        <span class="byline-v">Raymond Abiola</span>
+      </div>
+      <div>
+        <span class="byline-k">Deployed on</span>
+        <span class="byline-v">Unichain Sepolia</span>
+      </div>
+      <div>
+        <span class="byline-k">Hook</span>
+        <span class="byline-v num">0x7dEC15A3&hellip;C044</span>
+      </div>
+    </div>
+  </section>
+
   <!-- 1 -->
-  <section class="slide is-active">
+  <section class="slide">
     <p class="eyebrow">Uniswap Hook Incubator &middot; UHI10</p>
     <h1>A security deposit<br>on every swap.</h1>
     <p class="lede">A Uniswap v4 hook that charges every trade a refundable deposit, then uses the pool&rsquo;s own price sixty seconds later to decide whether to give it back.</p>
@@ -358,7 +399,7 @@
   <span class="mark" aria-hidden="true"></span>
   <span class="name">Impact Rebated Fees</span>
   <span class="ticks" id="ticks"></span>
-  <span class="count num" id="count">01 / 10</span>
+  <span class="count num" id="count">01 / 11</span>
 </nav>
 
 <script>
