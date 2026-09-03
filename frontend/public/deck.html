@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A Uniswap v4 hook that charges every swap a refundable deposit, then uses the pool's own price sixty seconds later to decide whether to give it back.">
+<meta property="og:title" content="Impact Rebated Fees">
+<meta property="og:description" content="A Uniswap v4 hook that charges every swap a refundable deposit, then uses the pool's own price sixty seconds later to decide whether to give it back.">
+<meta property="og:image" content="https://impact-rebated-fees.vercel.app/opengraph-image">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<title>Impact Rebated Fees</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --ground: #0f1414;
+    --bg: #161b1b;
+    --surface: #1c2222;
+    --line: #2e3637;
+    --line-soft: #232b2b;
+    --ink: #e8edec;
+    --ink-dim: #8e9998;
+    --ink-faint: #5c6666;
+    --coral: #f05b4a;
+    --coral-soft: #2a1a18;
+    --mint: #3fe39b;
+    --mint-soft: #142622;
+    --amber: #f1b85b;
+
+    --sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  .deck {
+    position: relative;
+    height: 100dvh;
+    min-height: 560px;
+  }
+
+  .slide {
+    display: none;
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 28px;
+    padding: clamp(40px, 6vw, 96px);
+    padding-bottom: clamp(88px, 11vh, 132px);
+  }
+
+  .slide.is-active { display: flex; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .slide.is-active > * { animation: rise 380ms cubic-bezier(.2,.7,.3,1) both; }
+    .slide.is-active > *:nth-child(2) { animation-delay: 55ms; }
+    .slide.is-active > *:nth-child(3) { animation-delay: 110ms; }
+    .slide.is-active > *:nth-child(4) { animation-delay: 165ms; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(9px); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.05vw, 13px);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1, h2 {
+    margin: 0;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  h1 { font-size: clamp(40px, 6.6vw, 92px); line-height: 1.02; }
+  h2 { font-size: clamp(28px, 4.1vw, 58px); line-height: 1.08; max-width: 20ch; }
+
+  .lede {
+    margin: 0;
+    max-width: 62ch;
+    font-size: clamp(16px, 1.65vw, 23px);
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+
+  .lede strong { color: var(--ink); font-weight: 500; }
+
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+
+  /* stats ---------------------------------------------------------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: clamp(20px, 3vw, 56px);
+    max-width: 1100px;
+  }
+  .stat-v { font-family: var(--mono); font-size: clamp(28px, 3.4vw, 46px); line-height: 1; }
+  .stat-l { margin-top: 10px; font-size: clamp(13px, 1.15vw, 15px); color: var(--ink-dim); }
+
+  /* steps ---------------------------------------------------------- */
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: clamp(20px, 2.6vw, 44px); max-width: 1180px; }
+  .step-n { font-family: var(--mono); font-size: 13px; color: var(--coral); letter-spacing: .12em; }
+  .step-t { margin: 14px 0 8px; font-size: clamp(17px, 1.7vw, 22px); }
+  .step-b { margin: 0; font-size: clamp(13px, 1.2vw, 16px); line-height: 1.55; color: var(--ink-dim); }
+
+  /* two-up compare -------------------------------------------------- */
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1180px; }
+  .panel { border: 1px solid var(--line-soft); border-radius: 18px; padding: clamp(20px, 2.2vw, 32px); background: var(--surface); }
+  .panel.is-ours { border-color: rgb(240 91 74 / .38); }
+  .panel h3 { margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; font-weight: 400; color: var(--ink-faint); }
+  .panel.is-ours h3 { color: var(--coral); }
+  .panel .verdict { margin: 16px 0 18px; font-size: clamp(20px, 2.1vw, 28px); letter-spacing: -.02em; }
+  .panel ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .panel li { font-size: clamp(13px, 1.15vw, 15.5px); line-height: 1.5; color: var(--ink-dim); padding-left: 18px; position: relative; }
+  .panel li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 1px; background: var(--line); }
+  .panel .who { margin-top: 20px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
+
+  /* chips ----------------------------------------------------------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { border-radius: 999px; padding: 8px 18px; font-size: clamp(13px, 1.2vw, 16px); }
+  .chip.benign { background: var(--mint-soft); color: var(--mint); }
+  .chip.informed { background: var(--coral-soft); color: var(--coral); }
+
+  /* chart ----------------------------------------------------------- */
+  .chart-wrap { max-width: 1080px; }
+  .chart { width: 100%; height: auto; display: block; }
+  .legend { display: flex; gap: 22px; margin-top: 14px; font-size: 13px; color: var(--ink-dim); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  /* limits ---------------------------------------------------------- */
+  .limits { display: flex; flex-direction: column; gap: 18px; max-width: 74ch; }
+  .limit { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline; }
+  .limit .k { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); white-space: nowrap; }
+  .limit .v { font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; color: var(--ink-dim); }
+
+  /* chrome ---------------------------------------------------------- */
+  .rail {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px clamp(40px, 6vw, 96px);
+    border-top: 1px solid var(--line-soft);
+    background: var(--bg);
+  }
+  .rail .mark { width: 15px; height: 15px; border: 2.5px solid var(--coral); border-radius: 50%; flex: none; }
+  .rail .name { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); letter-spacing: .04em; }
+  .ticks { margin-left: auto; display: flex; gap: 5px; }
+  .tick { width: 20px; height: 3px; border-radius: 2px; background: var(--line); border: 0; padding: 0; cursor: pointer; }
+  .tick[aria-current="true"] { background: var(--coral); }
+  .tick:focus-visible { outline: 2px solid var(--coral); outline-offset: 3px; }
+  .count { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); min-width: 46px; text-align: right; }
+
+  .hint {
+    position: fixed; right: clamp(40px, 6vw, 96px); top: 22px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .hint { display: none; }
+    .slide { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="deck" id="deck">
+
+  <!-- 1 -->
+  <section class="slide is-active">
+    <p class="eyebrow">Uniswap Hook Incubator &middot; UHI10</p>
+    <h1>A security deposit<br>on every swap.</h1>
+    <p class="lede">A Uniswap v4 hook that charges every trade a refundable deposit, then uses the pool&rsquo;s own price sixty seconds later to decide whether to give it back.</p>
+    <div class="chips">
+      <span class="chip benign">Benign &middot; refunded</span>
+      <span class="chip informed">Informed &middot; paid to LPs</span>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <p class="eyebrow">The problem</p>
+    <h2>One fee. Two completely different traders.</h2>
+    <p class="lede">Someone swapping five hundred dollars pays the same fee as a bot that just took money off the pool. A pool has one fee and no way to tell them apart, so it charges everyone enough to survive the bot.</p>
+    <p class="lede"><strong>The small trader pays for damage they did not cause.</strong></p>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <p class="eyebrow">The insight</p>
+    <h2>You cannot tell at the time. A minute later it is obvious.</h2>
+    <p class="lede">At the moment of a trade there is genuinely nothing to see, because whatever the trader knew has not reached the price yet.</p>
+    <p class="lede">If the price carries on moving the same way afterwards, the pool was still quoting a stale number when that trader left, and it is about to be picked off again on the same mistake.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <p class="eyebrow">How it works</p>
+    <div class="steps">
+      <div>
+        <p class="step-n">01</p>
+        <p class="step-t">Everyone pays</p>
+        <p class="step-b">The pool charges its normal fee, untouched. The hook takes 25 bps more and holds it as a claim inside Uniswap&rsquo;s own vault. No judgement, because the next sixty seconds have not happened.</p>
+      </div>
+      <div>
+        <p class="step-n">02</p>
+        <p class="step-t">The pool keeps count</p>
+        <p class="step-b">It records where the swap left the price, then runs a time-weighted average of everything after. A single block cannot move that average.</p>
+      </div>
+      <div>
+        <p class="step-n">03</p>
+        <p class="step-t">Anyone settles it</p>
+        <p class="step-b">Drift past the threshold and the deposit goes to the liquidity providers. Otherwise it returns to the trader. Whoever settles keeps 2%, so self-settling costs nothing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <p class="eyebrow">Evidence &middot; 26,209 real mainnet swaps replayed</p>
+    <div class="chart-wrap">
+      <svg class="chart" id="hist" viewBox="0 0 1000 300" role="img"
+           aria-label="Distribution of post-swap price drift across 26,209 real swaps. 3.2 percent exceed the 20 tick threshold and pay the liquidity providers."></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:#28a874"></i> refunded to the trader</span>
+        <span><i class="swatch" style="background:#f05b4a"></i> paid to the liquidity providers</span>
+      </div>
+    </div>
+    <p class="lede">Not a simulation. Real trades from the live USDC/ETH pool, replayed to ask what this hook would have decided. <strong>3.2% land past the threshold.</strong></p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <p class="eyebrow">Chosen on economics, not on hit rate</p>
+    <h2>We did not pick the highest revenue setting.</h2>
+    <p class="lede">Thirty six parameter combinations were tested against what each one costs a trader carrying no information. The settings with the best headline revenue charge ordinary traders three times as much.</p>
+    <div class="stats">
+      <div><div class="stat-v" style="color:var(--mint)">+32.7%</div><div class="stat-l">LP revenue over the base fee</div></div>
+      <div><div class="stat-v">0.71 bps</div><div class="stat-l">expected cost to an ordinary trader</div></div>
+      <div><div class="stat-v" style="color:var(--coral)">42.8%</div><div class="stat-l">of captured value recovered</div></div>
+      <div><div class="stat-v">$305,032</div><div class="stat-l">captured by informed flow that week</div></div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <p class="eyebrow">How it compares</p>
+    <div class="compare">
+      <div class="panel">
+        <h3>Everyone else</h3>
+        <p class="verdict">Decides before the swap</p>
+        <ul>
+          <li>Guesses from volatility, or a gap against an oracle</li>
+          <li>Needs a price feed to trust and pay for</li>
+          <li>Overcharges ordinary traders who arrive in a volatile minute</li>
+        </ul>
+        <p class="who">PegGuard &middot; TRIDENT &middot; DAMM &middot; Nezlobin Directional Fee &middot; Arb Controller</p>
+      </div>
+      <div class="panel is-ours">
+        <h3>This hook</h3>
+        <p class="verdict">Decides after the swap</p>
+        <ul>
+          <li>Reads what the price actually did over the next sixty seconds</li>
+          <li>No oracle, no off-chain service, no keeper network</li>
+          <li>Observes the outcome instead of forecasting it</li>
+        </ul>
+        <p class="who">Zero of 660 prior Hook Incubator projects settle a fee after the fact</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <p class="eyebrow">The version that failed</p>
+    <h2>The first build flagged fewer trades than random chance.</h2>
+    <p class="lede">It measured drift from the price the trader paid. Your own trade moves the price, and that movement bounces back, which drags every trader toward looking innocent.</p>
+    <p class="lede"><strong>Measuring from where the swap left the price removes your own footprint, and the signal appears.</strong> Found before writing any Solidity. That one choice is the difference between a mechanism that works and one that quietly does nothing.</p>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <p class="eyebrow">Honest limits</p>
+    <div class="limits">
+      <div class="limit"><span class="k">Statistical</span><span class="v">A trade carrying no information still trips the threshold about one time in thirty five. That is exactly where the 0.71 bps comes from.</span></div>
+      <div class="limit"><span class="k">Clean arbitrage</span><span class="v">An arbitrageur who corrects the price in one move is not caught. Nothing keeps drifting, so there is nothing to measure.</span></div>
+      <div class="limit"><span class="k">Manipulation</span><span class="v">Reads benign, because manipulation is a price move that snaps back.</span></div>
+      <div class="limit"><span class="k">Backtest</span><span class="v">The replay assumes the same trades would still have happened with the deposit in place.</span></div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <p class="eyebrow">Live on Unichain Sepolia</p>
+    <h2>Every swap posts a deposit.</h2>
+    <p class="lede">Sixty seconds later the pool&rsquo;s own price decides whether you were trading on information, and the deposit either comes back to you or goes to the people whose money you traded against.</p>
+    <div class="stats">
+      <div><div class="stat-v">26</div><div class="stat-l">tests, 96% line coverage</div></div>
+      <div><div class="stat-v">200</div><div class="stat-l">cases cross-checked against the analysis</div></div>
+      <div><div class="stat-v">0</div><div class="stat-l">partner integrations, by design</div></div>
+      <div><div class="stat-v" style="font-size:clamp(15px,1.5vw,20px);line-height:1.35">0x7dEC15A3&hellip;C044</div><div class="stat-l">hook address</div></div>
+    </div>
+  </section>
+
+</div>
+
+<p class="hint" id="hint">&larr; &rarr; to navigate</p>
+
+<nav class="rail" aria-label="Slides">
+  <span class="mark" aria-hidden="true"></span>
+  <span class="name">Impact Rebated Fees</span>
+  <span class="ticks" id="ticks"></span>
+  <span class="count num" id="count">01 / 10</span>
+</nav>
+
+<script>
+  (function () {
+    // real distribution of post-swap drift, from analysis/out/economics.json
+    var edges  = [-100, -50, -30, -20, -10, -5, 0, 5, 10, 20, 30, 50, 100];
+    var counts = [78, 135, 223, 312, 1066, 1550, 6044, 11545, 2754, 1658, 413, 261, 133, 31];
+    var theta  = 20;
+
+    function drawHistogram() {
+      var W = 1000, H = 300, padX = 4, padTop = 26, padBottom = 34;
+      var plotH = H - padTop - padBottom;
+      var plotW = W - padX * 2;
+      var bw = plotW / counts.length;
+      var max = Math.max.apply(null, counts);
+      // a bin is informed when its lower edge is at or above theta
+      var informed = function (i) { return i > 0 && edges[i - 1] >= theta; };
+      var thetaIdx = edges.indexOf(theta) + 1;
+      var thetaX = padX + thetaIdx * bw;
+
+      var parts = [];
+      [0.25, 0.5, 0.75, 1].forEach(function (f) {
+        var y = padTop + plotH * (1 - f);
+        parts.push('<line x1="' + padX + '" x2="' + (W - padX) + '" y1="' + y + '" y2="' + y +
+                   '" stroke="#232b2b" stroke-width="1" fill="none"/>');
+      });
+
+      counts.forEach(function (c, i) {
+        var h = Math.max(1.5, (c / max) * plotH);
+        var x = padX + i * bw;
+        var y = padTop + plotH - h;
+        parts.push('<rect x="' + (x + 1.5) + '" y="' + y + '" width="' + (bw - 3) + '" height="' + h +
+                   '" rx="3" fill="' + (informed(i) ? '#f05b4a' : '#28a874') + '"/>');
+      });
+
+      parts.push('<line x1="' + thetaX + '" x2="' + thetaX + '" y1="' + (padTop - 16) + '" y2="' +
+                 (padTop + plotH) + '" stroke="#8e9998" stroke-width="1" stroke-dasharray="4 4" fill="none"/>');
+      parts.push('<text x="' + (thetaX + 8) + '" y="' + (padTop - 6) +
+                 '" fill="#e8edec" font-family="IBM Plex Mono, monospace" font-size="13">threshold, 20 ticks</text>');
+
+      [[padX, '−100'], [W / 2 - 6, '0'], [W - padX - 34, '+100']].forEach(function (p) {
+        parts.push('<text x="' + p[0] + '" y="' + (H - 10) +
+                   '" fill="#5c6666" font-family="IBM Plex Mono, monospace" font-size="13">' + p[1] + '</text>');
+      });
+      parts.push('<text x="' + (W / 2 - 108) + '" y="' + (H - 10) +
+                 '" fill="#5c6666" font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="end">drift, ticks</text>');
+
+      document.getElementById('hist').innerHTML = parts.join('');
+    }
+
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var ticks = document.getElementById('ticks');
+    var count = document.getElementById('count');
+    var hint = document.getElementById('hint');
+    var i = 0;
+
+    slides.forEach(function (_, n) {
+      var b = document.createElement('button');
+      b.className = 'tick';
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Slide ' + (n + 1));
+      b.addEventListener('click', function () { go(n); });
+      ticks.appendChild(b);
+    });
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function go(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
+      Array.prototype.forEach.call(ticks.children, function (t, k) {
+        t.setAttribute('aria-current', k === i ? 'true' : 'false');
+      });
+      count.textContent = pad(i + 1) + ' / ' + pad(slides.length);
+      if (i > 0 && hint) hint.style.display = 'none';
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(i + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+      if (e.key === 'Home') { e.preventDefault(); go(0); }
+      if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+    });
+
+    var x0 = null;
+    document.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 44) go(i + (dx < 0 ? 1 : -1));
+      x0 = null;
+    }, { passive: true });
+
+    drawHistogram();
+    go(0);
+  })();
+</script>
+
+</body>
+</html>
